@@ -618,13 +618,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 361308240}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.2181528, y: 0, z: 0, w: 0.97591466}
-  m_LocalPosition: {x: 0, y: 8, z: -7}
+  m_LocalRotation: {x: 0.06104851, y: 0, z: 0, w: 0.99813485}
+  m_LocalPosition: {x: 0, y: 2.5, z: -4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 7, y: 0, z: 0}
 --- !u!114 &361308244
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3688,6 +3688,7 @@ MonoBehaviour:
   - {fileID: 396787961}
   - {fileID: 1274131075}
   - {fileID: 2051598179}
+  centerOfMassHeight: 0.22
 --- !u!4 &1957090300
 Transform:
   m_ObjectHideFlags: 0
@@ -3756,6 +3757,11 @@ MonoBehaviour:
     maximumBallVelocity: 12
     releaseSamplingWindow: 0.2
     sensitivity: 1.5
+    minimumForwardAcceleration: 0.25
+    minimumForwardBetaSpeed: 15
+    forwardBetaIncreases: 1
+    hookAcceleration: 0.9
+    fullSpinRollDegrees: 35
   aimSensitivity: 0.3
   maximumAimDegrees: 6
   maximumRollSeconds: 12
