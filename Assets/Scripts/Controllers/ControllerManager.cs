@@ -1,0 +1,35 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace MotionControllers
+{
+    public sealed class ControllerManager : MonoBehaviour, IControllerButtonSource
+    {
+        [Range(0, 0.15f)] public float smoothingSeconds = 0.025f;
+        [Range(1, 4)] public int maximumControllers = 4;
+        private readonly Dictionary<string, ControllerSession> sessions = new Dictionary<string, ControllerSession>();
+        public IReadOnlyDictionary<string, ControllerSession> Sessions => sessions;
+        public event System.Action<ControllerButtonEvent> ButtonChanged;
+        public bool TryGetController(string id, out ControllerSession session) => sessions.TryGetValue(id, out session);
+        public bool Register(string id)
+        {
+            if (sessions.Count >= maximumControllers || sessions.ContainsKey(id)) return false;
+            sessions.Add(id, new ControllerSession(id));
+            return true;
+        }
+        public void Remove(string id) => sessions.Remove(id);
+        public void Clear() => sessions.Clear();
+        public bool Submit(MotionFrame frame, bool calibrate = false) =>
+            sessions.TryGetValue(frame.ControllerId, out var session) && session.Accept(frame, calibrate);
+        public bool SubmitButton(ControllerButtonEvent input)
+        {
+            if (!sessions.TryGetValue(input.ControllerId, out var session) || !session.AcceptButton(input)) return false;
+            ButtonChanged?.Invoke(input);
+            return true;
+        }
+        private void Update()
+        {
+            foreach (var session in sessions.Values) session.UpdateSmoothing(Time.unscaledDeltaTime, smoothingSeconds);
+        }
+    }
+}

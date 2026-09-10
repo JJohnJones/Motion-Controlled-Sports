@@ -1,0 +1,5 @@
+{
+  "name": "MotionControllers.Editor",
+  "references": ["MotionControllers"],
+  "includePlatforms": ["Editor"]
+}
