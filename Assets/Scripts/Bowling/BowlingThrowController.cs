@@ -55,8 +55,10 @@ namespace MotionControllers.Bowling
             Time.realtimeSinceStartupAsDouble - session.Latest.ReceivedAtSeconds <= 0.5;
         private float ReadAim(ControllerSession session)
         {
-            var forward = session.RawRotation * Vector3.forward;
-            return Mathf.Clamp(Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg * aimSensitivity, -maximumAimDegrees, maximumAimDegrees);
+            if (!session.HasCalibrationDeviceAngles || !session.Latest.HasDeviceAngles) return 0;
+            float alpha = Mathf.DeltaAngle(session.CalibrationDeviceAngles.x, session.Latest.DeviceAnglesDegrees.x);
+            // Positive browser alpha turns the phone counter-clockwise (left when screen-up).
+            return Mathf.Clamp(-alpha * aimSensitivity, -maximumAimDegrees, maximumAimDegrees);
         }
         public void HandleButton(ControllerButtonEvent input)
         {
@@ -83,7 +85,7 @@ namespace MotionControllers.Bowling
                 RecentPeakSpeed = LastRelease.PeakAngularSpeed;
                 if (!LastRelease.Valid) { CancelHold(LastRelease.Reason); return; }
                 Vector3 direction = Quaternion.AngleAxis(AimDegrees, Vector3.up) * ball.releasePoint.forward;
-                ball.Launch(direction.normalized * LastRelease.BallSpeed);
+                ball.Launch(direction.normalized * LastRelease.BallSpeed, LastRelease.Spin, release.hookAcceleration);
                 State = BowlingState.Rolling; stateSince = Time.realtimeSinceStartupAsDouble; stoppedSeconds = 0;
                 Message = "Ball rolling. Wait for reset.";
             }
@@ -147,7 +149,8 @@ namespace MotionControllers.Bowling
             GUILayout.Label($"Release: {LastRelease.TimestampMs:F1} ms (phone clock)");
             GUILayout.Label($"Swing: {LastRelease.EffectiveSwingSpeed:F2} rad/s | Ball: {LastRelease.BallSpeed:F2} m/s");
             GUILayout.Label("Launch velocity: " + (ball != null ? ball.LastLaunchVelocity.ToString("F2") : "—"));
-            GUILayout.Label($"Wrist roll: {LastRelease.WristRollDegrees:F1}° (hook not applied)");
+            GUILayout.Label($"Forward acceleration: {LastRelease.ForwardAcceleration:F2} m/s² | Beta speed: {LastRelease.ForwardBetaSpeed:F1}°/s");
+            GUILayout.Label($"Wrist gamma: {LastRelease.WristRollDegrees:F1}° | Spin: {LastRelease.Spin:F2}");
         }
     }
 }

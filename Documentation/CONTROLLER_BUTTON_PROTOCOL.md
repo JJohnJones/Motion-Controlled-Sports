@@ -2,6 +2,8 @@
 
 Buttons extend the existing version-1 motion protocol. Deploy the new Unity receiver before enabling the new PWA button. Existing motion-only clients still operate the cube. The input layer names the action **primary**; only bowling maps it to Hold Ball.
 
+The current PWA also sends `hasDeviceAngles:true` and `deviceAngles:{x:alpha,y:beta,z:gamma}` in degrees in every motion/calibration/button snapshot. These are the original intrinsic natural-device Z-X-Y angles, independent of Unity's quaternion-to-Euler display. Native input sources can supply the same canonical angle convention. `MotionFrame.DeviceAnglesDegrees` preserves them; calibration records their baseline. Bowling uses alpha for aim, positive beta change as one release-direction gate, and relative gamma for wrist spin. Older motion-only clients remain compatible with cube visualization, but bowling requires the angles and a new calibration.
+
 ## Wire messages
 
 After the existing hello/welcome handshake, a button event looks like this (sensor fields abbreviated here; the actual press/release includes the complete existing snapshot schema):

@@ -23,6 +23,11 @@ namespace MotionControllers
         public ButtonPhase LastButtonPhase { get; private set; } = ButtonPhase.Canceled;
         public long LastButtonSequence { get; private set; }
         public double LastButtonTimestampMs { get; private set; }
+        public Vector3 CalibrationDeviceAngles { get; private set; }
+        public bool HasCalibrationDeviceAngles { get; private set; }
+        public Vector3 CalibrationForwardAxis => Quaternion.AngleAxis(calibrationScreenAngle, Vector3.forward) * Vector3.up;
+        public Vector3 AccelerationInCalibrationAxes(MotionFrame frame) =>
+            Quaternion.Inverse(reference) * (frame.Orientation * frame.Acceleration);
 
         public ControllerSession(string id) { Id = id; }
 
@@ -48,6 +53,8 @@ namespace MotionControllers
         {
             if (!HasFrame) return false;
             reference = Latest.Orientation;
+            CalibrationDeviceAngles = Latest.DeviceAnglesDegrees;
+            HasCalibrationDeviceAngles = Latest.HasDeviceAngles;
             calibrationScreenAngle = Latest.ScreenAngle;
             IsCalibrated = true;
             CalibrationRevision++;

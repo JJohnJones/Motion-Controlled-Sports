@@ -9,16 +9,18 @@ namespace MotionControllers.Tests
         private static MotionFrame Frame(long sequence, double time, float speed, Quaternion? rotation = null) => new MotionFrame
         { ControllerId = "phone", Sequence = sequence, TimestampMs = time, MotionTimestampMs = time,
             ReceivedAtSeconds = Time.realtimeSinceStartupAsDouble, Orientation = rotation ?? Quaternion.identity,
-            HasAngularVelocity = true, AngularVelocity = Vector3.right * speed };
+            HasAngularVelocity = true, AngularVelocity = Vector3.right * speed,
+            HasAcceleration = true, Acceleration = Quaternion.Inverse(rotation ?? Quaternion.identity) * Vector3.up * 3,
+            HasDeviceAngles = true, DeviceAnglesDegrees = new Vector3((rotation ?? Quaternion.identity).eulerAngles.y, (float)(time - 1000) * 0.1f, 0) };
         [Test] public void FasterSwingsMapToFasterBoundedBallSpeedsAndHoldTimeIsNotPower()
         {
             var session = new ControllerSession("phone"); var settings = new BowlingReleaseSettings();
             session.Accept(Frame(1, 1000, 0), true); session.Accept(Frame(2, 1100, 2));
             var slow = BowlingReleaseCalculator.Calculate(session, 1000, 1100, settings);
-            session.Accept(Frame(3, 1300, 6)); var fast = BowlingReleaseCalculator.Calculate(session, 1000, 1300, settings);
+            session.Accept(Frame(3, 1250, 6)); session.Accept(Frame(4, 1300, 6)); var fast = BowlingReleaseCalculator.Calculate(session, 1000, 1300, settings);
             Assert.That(slow.Valid && fast.Valid, Is.True); Assert.That(fast.BallSpeed, Is.GreaterThan(slow.BallSpeed));
             Assert.That(BowlingReleaseCalculator.Calculate(session, 1250, 1300, settings).BallSpeed, Is.EqualTo(fast.BallSpeed));
-            session.Accept(Frame(4, 1500, 999));
+            session.Accept(Frame(5, 1450, 999)); session.Accept(Frame(6, 1500, 999));
             Assert.That(BowlingReleaseCalculator.Calculate(session, 1000, 1500, settings).BallSpeed, Is.EqualTo(settings.maximumBallVelocity));
         }
         [Test] public void OldPreHoldAndFuturePeaksCannotPowerAReleaseAndStaleInputIsRejected()
@@ -68,6 +70,34 @@ namespace MotionControllers.Tests
                 game.resetDelaySeconds=0; Tick(game); Assert.That(game.State,Is.EqualTo(BowlingState.Ready));
                 Assert.That(ball.Body.position,Is.EqualTo(ball.releasePoint.position)); Assert.That(ball.Body.isKinematic,Is.True);
             });
+        }
+        [Test] public void AlphaControlsAimAndGammaDoesNot()
+        {
+            WithGame((manager,game,ball) =>
+            {
+                manager.Submit(Frame(1,1000,0),true);
+                var sample=Frame(2,1050,0); sample.DeviceAnglesDegrees=new Vector3(10,0,45);
+                manager.Submit(sample); Tick(game); Assert.That(game.AimDegrees,Is.EqualTo(-3).Within(0.01));
+                sample=Frame(3,1100,0); sample.DeviceAnglesDegrees=new Vector3(10,0,-45);
+                manager.Submit(sample); Tick(game); Assert.That(game.AimDegrees,Is.EqualTo(-3).Within(0.01));
+            });
+        }
+        [Test] public void ForwardAccelerationAndIncreasingBetaAreBothRequiredAndGammaCreatesSpin()
+        {
+            var settings=new BowlingReleaseSettings();
+            var session=new ControllerSession("phone"); session.Accept(Frame(1,1000,0),true);
+            session.Accept(Frame(2,1100,5)); var releaseFrame=Frame(3,1150,5);
+            releaseFrame.Acceleration=Vector3.down*3; session.Accept(releaseFrame);
+            var backward=BowlingReleaseCalculator.Calculate(session,1000,1150,settings);
+            Assert.That(backward.Valid,Is.False); Assert.That(backward.Reason,Does.Contain("acceleration"));
+            releaseFrame=Frame(4,1200,5); releaseFrame.DeviceAnglesDegrees=new Vector3(0,5,0); session.Accept(releaseFrame);
+            var betaBackward=BowlingReleaseCalculator.Calculate(session,1000,1200,settings);
+            Assert.That(betaBackward.Valid,Is.False); Assert.That(betaBackward.Reason,Does.Contain("beta"));
+            releaseFrame=Frame(5,1250,5); releaseFrame.DeviceAnglesDegrees=new Vector3(0,20,35); session.Accept(releaseFrame);
+            var forward=BowlingReleaseCalculator.Calculate(session,1000,1250,settings);
+            Assert.That(forward.Valid,Is.True); Assert.That(forward.Spin,Is.EqualTo(1));
+            releaseFrame=Frame(6,1300,5); releaseFrame.DeviceAnglesDegrees=new Vector3(0,30,-35); session.Accept(releaseFrame);
+            Assert.That(BowlingReleaseCalculator.Calculate(session,1000,1300,settings).Spin,Is.EqualTo(-1));
         }
         [Test] public void TouchCancellationAndDisconnectDoNotLaunch()
         {

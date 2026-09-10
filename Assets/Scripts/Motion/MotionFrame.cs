@@ -17,6 +17,9 @@ namespace MotionControllers
         public Vector3 AccelerationIncludingGravity;
         public bool HasAngularVelocity, HasAcceleration, HasGravity;
         public bool AbsoluteOrientation;
+        // Intrinsic natural-device Z-X-Y angles: x=alpha, y=beta, z=gamma, in degrees.
+        public Vector3 DeviceAnglesDegrees;
+        public bool HasDeviceAngles;
         public float ScreenAngle;
     }
 }

@@ -18,6 +18,8 @@ namespace MotionControllers
         public long buttonSequence;
         public double eventTimestamp;
         public bool hasSnapshot;
+        public Vector3 deviceAngles;
+        public bool hasDeviceAngles;
     }
 
     public static class MotionJsonCodec
@@ -41,7 +43,8 @@ namespace MotionControllers
                 p.orientation.z * p.orientation.z + p.orientation.w * p.orientation.w;
             if (magnitude < 0.5f || magnitude > 1.5f ||
                 (p.hasAngularVelocity && !Valid(p.angularVelocity)) ||
-                (p.hasAcceleration && !Valid(p.acceleration)) || (p.hasGravity && !Valid(p.accelerationIncludingGravity)))
+                (p.hasAcceleration && !Valid(p.acceleration)) || (p.hasGravity && !Valid(p.accelerationIncludingGravity)) ||
+                (p.hasDeviceAngles && !Valid(p.deviceAngles)))
                 return false;
             frame = new MotionFrame
             {
@@ -51,7 +54,8 @@ namespace MotionControllers
                 Acceleration = p.hasAcceleration ? DeviceCoordinates.Acceleration(p.acceleration, p.screenAngle) : Vector3.zero,
                 AccelerationIncludingGravity = p.hasGravity ? DeviceCoordinates.Acceleration(p.accelerationIncludingGravity, p.screenAngle) : Vector3.zero,
                 HasAngularVelocity = p.hasAngularVelocity, HasAcceleration = p.hasAcceleration, HasGravity = p.hasGravity,
-                AbsoluteOrientation = p.absoluteOrientation, ScreenAngle = p.screenAngle
+                AbsoluteOrientation = p.absoluteOrientation, ScreenAngle = p.screenAngle,
+                DeviceAnglesDegrees = p.deviceAngles, HasDeviceAngles = p.hasDeviceAngles
             };
             return true;
         }

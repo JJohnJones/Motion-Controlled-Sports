@@ -88,6 +88,7 @@ namespace MotionControllers
                 GUILayout.Label($"Frames {s.ReceivedFrames} | sequence {s.Latest.Sequence} | gaps {s.SequenceGaps} | arrival age {age * 1000:F0} ms");
                 GUILayout.Label(age > 0.5 ? "STALE — cube held" : s.NeedsCalibration ? "CALIBRATION REQUIRED" : "Receiving / calibrated");
                 GUILayout.Label("Relative degrees: " + s.RawRotation.eulerAngles.ToString("F1"));
+                if (s.Latest.HasDeviceAngles) GUILayout.Label("Device α / β / γ: " + s.Latest.DeviceAnglesDegrees.ToString("F1"));
                 GUILayout.Label("Angular rad/s: " + (s.Latest.HasAngularVelocity ? s.Latest.AngularVelocity.ToString("F2") : "unavailable"));
                 GUILayout.Label("Acceleration m/s²: " + (s.Latest.HasAcceleration ? s.Latest.Acceleration.ToString("F2") : "unavailable"));
                 if (GUILayout.Button("Calibrate " + s.Id.Substring(0, 8)) && age <= 0.5) s.Calibrate();

@@ -76,7 +76,7 @@ namespace MotionControllers.Editor
                     var body = pin.AddComponent<CapsuleCollider>(); body.center = new Vector3(0, 0.15f, 0); body.radius = 0.105f; body.height = 0.26f; body.sharedMaterial = pinPhysics;
                     var head = pin.AddComponent<CapsuleCollider>(); head.center = new Vector3(0, 0.345f, 0); head.radius = 0.058f; head.height = 0.2f; head.sharedMaterial = pinPhysics;
                     var rigidbody = pin.AddComponent<Rigidbody>(); rigidbody.mass = 1.5f;
-                    rigidbody.centerOfMass = new Vector3(0, 0.16f, 0); rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+                    rigidbody.centerOfMass = new Vector3(0, 0.22f, 0); rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
                     rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
                     rigidbody.solverIterations = 12; rigidbody.solverVelocityIterations = 4;
                     rigidbody.maxAngularVelocity = 40; rigidbody.angularDamping = 0.05f;
