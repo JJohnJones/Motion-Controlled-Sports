@@ -1,4 +1,7 @@
 {
   "name": "MotionControllers",
-  "rootNamespace": "MotionControllers"
+  "rootNamespace": "MotionControllers",
+  "references": [
+    "Unity.WebRTC"
+  ]
 }

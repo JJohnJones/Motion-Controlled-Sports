@@ -1,6 +1,6 @@
 {
   "name": "MotionControllers.Tests",
-  "references": ["MotionControllers"],
+  "references": ["MotionControllers", "MotionControllers.Editor"],
   "includePlatforms": ["Editor"],
   "optionalUnityReferences": ["TestAssemblies"]
 }

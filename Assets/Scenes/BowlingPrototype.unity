@@ -3022,6 +3022,70 @@ Rigidbody:
   m_Interpolate: 1
   m_Constraints: 0
   m_CollisionDetection: 2
+--- !u!1 &1454620398
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1454620400}
+  - component: {fileID: 1454620399}
+  m_Layer: 0
+  m_Name: Bowling Gameplay
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1454620399
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1454620398}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b3dc4df27ec2d747a325394210d0603, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MotionControllers::MotionControllers.Bowling.BowlingThrowController
+  inputSource: {fileID: 0}
+  ball: {fileID: 547640278}
+  pinRack: {fileID: 1957090299}
+  aimIndicator: {fileID: 1291778957}
+  release:
+    minimumSwingSpeed: 0.75
+    maximumSwingSpeed: 10
+    minimumBallVelocity: 3.5
+    maximumBallVelocity: 12
+    releaseSamplingWindow: 0.2
+    sensitivity: 1.5
+    minimumForwardAcceleration: 0.25
+    minimumForwardBetaSpeed: 15
+    forwardBetaIncreases: 1
+    hookAcceleration: 0.9
+    fullSpinRollDegrees: 35
+  aimSensitivity: 0.3
+  maximumAimDegrees: 6
+  maximumRollSeconds: 12
+  resetDelaySeconds: 2
+--- !u!4 &1454620400
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1454620398}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1604945044
 GameObject:
   m_ObjectHideFlags: 0
@@ -3714,6 +3778,56 @@ Transform:
   - {fileID: 2051598185}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2007221979
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2007221981}
+  - component: {fileID: 2007221980}
+  m_Layer: 0
+  m_Name: Controller Debug UI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2007221980
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2007221979}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f87d46db8c9412bacd06e33afb75206, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MotionControllers::MotionControllers.ControllerDebugPanel
+  visualizer: {fileID: 0}
+  gameDebugSource: {fileID: 1454620399}
+  pwaUrl: https://jjohnjones.github.io/Motion-Controller-Website/
+  publicWssUrl: wss://block-suppose-ict-corn.trycloudflare.com/controller
+  uiScale: 1
+  controllerSystem: {fileID: 2017496555}
+--- !u!4 &2007221981
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2007221979}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2017496551
 GameObject:
   m_ObjectHideFlags: 0
@@ -3725,8 +3839,8 @@ GameObject:
   - component: {fileID: 2017496556}
   - component: {fileID: 2017496555}
   - component: {fileID: 2017496554}
-  - component: {fileID: 2017496553}
-  - component: {fileID: 2017496552}
+  - component: {fileID: 2017496557}
+  - component: {fileID: 2017496558}
   m_Layer: 0
   m_Name: Controller System
   m_TagString: Untagged
@@ -3734,55 +3848,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &2017496552
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2017496551}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b3dc4df27ec2d747a325394210d0603, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: MotionControllers::MotionControllers.Bowling.BowlingThrowController
-  inputSource: {fileID: 2017496555}
-  ball: {fileID: 547640278}
-  pinRack: {fileID: 1957090299}
-  aimIndicator: {fileID: 1291778957}
-  release:
-    minimumSwingSpeed: 0.75
-    maximumSwingSpeed: 10
-    minimumBallVelocity: 3.5
-    maximumBallVelocity: 12
-    releaseSamplingWindow: 0.2
-    sensitivity: 1.5
-    minimumForwardAcceleration: 0.25
-    minimumForwardBetaSpeed: 15
-    forwardBetaIncreases: 1
-    hookAcceleration: 0.9
-    fullSpinRollDegrees: 35
-  aimSensitivity: 0.3
-  maximumAimDegrees: 6
-  maximumRollSeconds: 12
-  resetDelaySeconds: 2
---- !u!114 &2017496553
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2017496551}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f87d46db8c9412bacd06e33afb75206, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: MotionControllers::MotionControllers.ControllerDebugPanel
-  visualizer: {fileID: 0}
-  gameDebugSource: {fileID: 2017496552}
-  pwaUrl: https://jjohnjones.github.io/Motion-Controller-Website/
-  publicWssUrl: wss://room-monroe-explain-entry.trycloudflare.com/controller
-  uiScale: 1
 --- !u!114 &2017496554
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3790,7 +3855,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2017496551}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aa6e21153c5d4a20ad2a2d7e996bcf3a, type: 3}
   m_Name: 
@@ -3826,6 +3891,32 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2017496557
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2017496551}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d678a92e3704c51947ee401e540af7e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MotionControllers::MotionControllers.PersistentControllerRoot
+--- !u!114 &2017496558
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2017496551}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a77ffbe396ae45d390a81ef0993d5937, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MotionControllers::MotionControllers.WebRtcLanControllerTransport
+  signalingUrl: wss://motion-controller-signaling.onrender.com/signal
+  pwaUrl: https://jjohnjones.github.io/Motion-Controller-Website/
 --- !u!1 &2048557493
 GameObject:
   m_ObjectHideFlags: 0
@@ -4328,3 +4419,5 @@ SceneRoots:
   - {fileID: 2017496556}
   - {fileID: 361308243}
   - {fileID: 1926789639}
+  - {fileID: 1454620400}
+  - {fileID: 2007221981}

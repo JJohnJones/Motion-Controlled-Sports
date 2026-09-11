@@ -14,7 +14,7 @@ namespace MotionControllers
 {
     // No Unity API here. TCP is loopback-only; a trusted TLS proxy exposes WSS.
     // .NET owns RFC6455 framing, masking, fragmentation, ping/pong and close handling.
-    public sealed class LoopbackWebSocketHost : IDisposable
+    public sealed class LoopbackWebSocketHost : IDisposable, IControllerTransport
     {
         public enum EventKind { Connected, Text, Disconnected }
         public readonly struct Incoming

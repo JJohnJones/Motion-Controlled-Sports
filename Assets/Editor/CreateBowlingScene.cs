@@ -93,6 +93,7 @@ namespace MotionControllers.Editor
             var bowling = system.AddComponent<BowlingThrowController>();
             bowling.inputSource = manager; bowling.ball = ball; bowling.pinRack = rack; bowling.aimIndicator = aim;
             debug.gameDebugSource = bowling;
+            MakeControllersPersistent.Configure(system);
 
             var camera = new GameObject("Main Camera").AddComponent<Camera>(); camera.tag = "MainCamera";
             camera.transform.position = new Vector3(0, 8, -7);

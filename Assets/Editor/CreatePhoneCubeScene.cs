@@ -21,6 +21,7 @@ namespace MotionControllers.Editor
             var view = cube.AddComponent<PhoneOrientationVisualizer>();
             view.inputSource = manager;
             panel.visualizer = view;
+            MakeControllersPersistent.Configure(root);
             // Raised screen/top markers distinguish faces without creating material assets.
             var front = GameObject.CreatePrimitive(PrimitiveType.Cube);
             front.name = "Screen face (-Z)";

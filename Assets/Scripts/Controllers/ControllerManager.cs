@@ -8,6 +8,7 @@ namespace MotionControllers
         [Range(0, 0.15f)] public float smoothingSeconds = 0.025f;
         [Range(1, 4)] public int maximumControllers = 4;
         private readonly Dictionary<string, ControllerSession> sessions = new Dictionary<string, ControllerSession>();
+        private readonly Dictionary<string, int> playerNumbers = new Dictionary<string, int>();
         public IReadOnlyDictionary<string, ControllerSession> Sessions => sessions;
         public event System.Action<ControllerButtonEvent> ButtonChanged;
         public bool TryGetController(string id, out ControllerSession session) => sessions.TryGetValue(id, out session);
@@ -15,10 +16,14 @@ namespace MotionControllers
         {
             if (sessions.Count >= maximumControllers || sessions.ContainsKey(id)) return false;
             sessions.Add(id, new ControllerSession(id));
+            int number = 1;
+            while (playerNumbers.ContainsValue(number)) number++;
+            playerNumbers.Add(id, number);
             return true;
         }
-        public void Remove(string id) => sessions.Remove(id);
-        public void Clear() => sessions.Clear();
+        public int GetPlayerNumber(string id) => playerNumbers.TryGetValue(id, out int number) ? number : 0;
+        public void Remove(string id) { sessions.Remove(id); playerNumbers.Remove(id); }
+        public void Clear() { sessions.Clear(); playerNumbers.Clear(); }
         public bool Submit(MotionFrame frame, bool calibrate = false) =>
             sessions.TryGetValue(frame.ControllerId, out var session) && session.Accept(frame, calibrate);
         public bool SubmitButton(ControllerButtonEvent input)

@@ -11,7 +11,7 @@ namespace MotionControllers
         public bool useSmoothing = true;
         private Quaternion neutralRotation;
         private IMotionInputSource source;
-        private void Start() { neutralRotation = transform.localRotation; source = inputSource as IMotionInputSource; }
+        private void Start() { neutralRotation = transform.localRotation; source = ControllerInput.Resolve(inputSource); }
         private void LateUpdate()
         {
             if (source == null) return;

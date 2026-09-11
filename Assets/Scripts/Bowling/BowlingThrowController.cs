@@ -41,13 +41,13 @@ namespace MotionControllers.Bowling
         {
             if (initialized) return;
             initialized = true;
-            if (ball == null || pinRack == null || inputSource == null)
+            if (ball == null || pinRack == null || ControllerInput.Resolve(inputSource) == null)
             { Message = "Assign input source, ball and pin rack in the Inspector."; enabled = false; return; }
             pinRack.CaptureStartingPoses(); ball.ResetBall(); Subscribe();
         }
         private void Subscribe()
         {
-            source = inputSource as IControllerButtonSource;
+            source = ControllerInput.Resolve(inputSource) as IControllerButtonSource;
             if (source == null) { Message = "Input source does not support controller buttons."; return; }
             source.ButtonChanged -= HandleButton; source.ButtonChanged += HandleButton;
         }

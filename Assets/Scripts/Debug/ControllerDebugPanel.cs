@@ -2,7 +2,6 @@ using UnityEngine;
 
 namespace MotionControllers
 {
-    [RequireComponent(typeof(ControllerReceiver), typeof(ControllerManager))]
     public sealed class ControllerDebugPanel : MonoBehaviour
     {
         public PhoneOrientationVisualizer visualizer;
@@ -14,11 +13,23 @@ namespace MotionControllers
         [Range(0.75f, 2f)] public float uiScale = 1f;
         private ControllerReceiver receiver;
         private ControllerManager manager;
+        private WebRtcLanControllerTransport lan;
+        private bool showLegacy;
+        [Tooltip("Leave empty to use the persistent controller system.")]
+        public ControllerManager controllerSystem;
         private GUISkin panelSkin;
         private Vector2 scrollPosition;
-        private void Awake() { receiver = GetComponent<ControllerReceiver>(); manager = GetComponent<ControllerManager>(); }
+        private void Start()
+        {
+            manager = PersistentControllerRoot.Instance != null ? PersistentControllerRoot.Instance.Manager :
+                controllerSystem != null ? controllerSystem : GetComponent<ControllerManager>();
+            if (manager == null) { enabled = false; return; }
+            receiver = manager.GetComponent<ControllerReceiver>();
+            lan = manager.GetComponent<WebRtcLanControllerTransport>();
+        }
         private void OnGUI()
         {
+            if (manager == null) return;
             if (panelSkin == null)
             {
                 panelSkin = Instantiate(GUI.skin);
@@ -69,13 +80,39 @@ namespace MotionControllers
         private void DrawContents()
         {
             GUILayout.Label("PHONE CONTROLLER · technical prototype");
-            GUILayout.Label(receiver.Status + " | Invalid/rejected: " + receiver.InvalidPackets);
-            GUILayout.Label("Pairing token (new each Play)");
-            GUILayout.TextField(receiver.PairingToken ?? "");
-            GUILayout.Label("Public WSS endpoint from your tunnel");
-            publicWssUrl = GUILayout.TextField(publicWssUrl);
-            if (GUILayout.Button("Copy pairing link"))
-                GUIUtility.systemCopyBuffer = pwaUrl + "#server=" + System.Uri.EscapeDataString(publicWssUrl) + "&token=" + receiver.PairingToken;
+            if (lan != null && lan.enabled)
+            {
+                GUILayout.Label("Connect Controller · LOCAL / LAN MODE");
+                GUILayout.Label(lan.State + " · " + lan.Status);
+                if (lan.PairingQr != null)
+                {
+                    float size = Mathf.Min(280, Mathf.Max(100, Screen.width * 0.42f / (Mathf.Max(0.75f, Screen.height / 900f) * uiScale) - 64));
+                    // A GUIStyle box keeps an image at its native module resolution. Reserve
+                    // a square, then explicitly scale the point-filtered QR and its white border.
+                    Rect qrRect = GUILayoutUtility.GetRect(size, size, GUILayout.ExpandWidth(false));
+                    GUI.DrawTexture(qrRect, lan.PairingQr, ScaleMode.ScaleToFit, false);
+                    GUILayout.Label("Scan with your phone · same Wi-Fi/LAN");
+                    if (GUILayout.Button("Copy controller link")) GUIUtility.systemCopyBuffer = lan.JoinUrl;
+                }
+                if (GUILayout.Button("New controller session / QR")) lan.RestartSession();
+                if (lan.Protocol != null) foreach (var c in lan.Protocol.Connections.Values)
+                {
+                    if (c.ControllerId == null) continue;
+                    GUILayout.Label($"Player {c.PlayerNumber} Connected · RTT {(c.RttMs < 0 ? "—" : c.RttMs.ToString("F0") + " ms")}");
+                }
+                GUILayout.Label("Rejected packets: " + (lan.Protocol?.InvalidPackets ?? 0));
+                showLegacy = GUILayout.Toggle(showLegacy, "Show legacy WebSocket diagnostics");
+            }
+            if (receiver != null && (lan == null || !lan.enabled || showLegacy))
+            {
+                GUILayout.Label(receiver.Status + " | Invalid/rejected: " + receiver.InvalidPackets);
+                GUILayout.Label("Pairing token (new each Play)");
+                GUILayout.TextField(receiver.PairingToken ?? "");
+                GUILayout.Label("Public WSS endpoint from your tunnel");
+                publicWssUrl = GUILayout.TextField(publicWssUrl);
+                if (GUILayout.Button("Copy pairing link"))
+                    GUIUtility.systemCopyBuffer = pwaUrl + "#server=" + System.Uri.EscapeDataString(publicWssUrl) + "&token=" + receiver.PairingToken;
+            }
             if (visualizer != null) visualizer.useSmoothing = GUILayout.Toggle(visualizer.useSmoothing, "Use light smoothing (uncheck for raw)");
             GUILayout.Label("Smoothing: " + manager.smoothingSeconds.ToString("F3") + " s (Inspector configurable)");
             GUILayout.Label("Controllers: " + manager.Sessions.Count + "/" + manager.maximumControllers);
