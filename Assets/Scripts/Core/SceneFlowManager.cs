@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.Rendering.Universal;
 namespace MotionControllers.Core
 {
-    public enum AppScreen { Title, Pairing, GameSelect, Playing, Results }
+    public enum AppScreen { Title, Pairing, GameSelect, Ready, Playing, Results }
     public sealed class SceneFlowManager : MonoBehaviour
     {
         public MonoBehaviour controllerLobby;
@@ -15,6 +15,8 @@ namespace MotionControllers.Core
         [Range(0, 1)] public float menuMusicVolume = 0.45f;
         private void Awake()
         {
+            menuMusicVolume = PlayerPreferences.MusicVolume;
+            PlayerPreferences.ApplyDisplay();
             if (menuMusic != null) gameObject.AddComponent<MenuMusicPlayer>().Initialize(this, menuMusic, menuMusicVolume);
         }
         public GameDefinition[] games = Array.Empty<GameDefinition>();
@@ -24,6 +26,7 @@ namespace MotionControllers.Core
         public GameDefinition CurrentGame { get; private set; }
         public GameResult Result { get; private set; }
         public IGameSession GameSession { get; private set; }
+        public GamePreparation Preparation { get; private set; }
         public Camera GameCamera { get; private set; }
         public string Error { get; private set; }
         public bool Busy { get; private set; }
@@ -43,6 +46,21 @@ namespace MotionControllers.Core
         public void ShowTitle() { Navigate(AppScreen.Title); }
         public void ShowGameSelect() { Navigate(AppScreen.GameSelect); }
         public void ContinueFromPairing() { if (Lobby?.ConnectedPlayers > 0) Navigate(AppScreen.GameSelect); }
+        public void PrepareGame(GameDefinition game)
+        {
+            if (Busy || game == null || !game.CanPlay(Lobby?.ConnectedPlayers ?? 0)) return;
+            var roster = new List<string>();
+            foreach (var slot in Lobby.Slots) if (slot.Health == PlayerConnectionHealth.Connected && roster.Count < game.maximumPlayers) roster.Add(slot.ControllerId);
+            Preparation?.Dispose();
+            Preparation = new GamePreparation(ControllerInput.Resolve(null) as IControllerButtonSource, Lobby, roster);
+            CurrentGame = game;
+            StartCoroutine(Transition(AppScreen.Ready, game));
+        }
+        public void StartPreparedGame()
+        {
+            if (!Busy && Screen == AppScreen.Ready && Preparation != null && Preparation.AllReady)
+                StartCoroutine(Transition(AppScreen.Playing, CurrentGame, new List<string>(Preparation.Players)));
+        }
         public void Play(GameDefinition game)
         {
             if (Busy || game == null || !game.CanPlay(Lobby?.ConnectedPlayers ?? 0)) return;
@@ -78,6 +96,7 @@ namespace MotionControllers.Core
         }
         private IEnumerator Transition(AppScreen target, GameDefinition game, IReadOnlyList<string> preservedPlayers = null)
         {
+            if (target != AppScreen.Ready) { Preparation?.Dispose(); Preparation = null; }
             Busy = true; Error = null; Lobby?.CancelHeldInput();
             GameSession?.SetPaused(true); Time.timeScale = 0;
             Changed?.Invoke(); yield return FadeTo(1);
@@ -124,7 +143,7 @@ namespace MotionControllers.Core
             Screen = target;
             if (menuCamera != null) menuCamera.enabled = target != AppScreen.Playing;
             if (target != AppScreen.Playing) SceneManager.SetActiveScene(gameObject.scene);
-            SetMode(target == AppScreen.Playing ? game.controllerUiMode : target == AppScreen.Pairing ? "pairing" : "menu");
+            SetMode(target == AppScreen.Playing ? game.controllerUiMode : target == AppScreen.Pairing ? "pairing" : target == AppScreen.Ready ? "ready-" + game.controllerUiMode : "menu");
             Lobby?.CancelHeldInput(); Changed?.Invoke();
             yield return FadeTo(0);
             if (target == AppScreen.Playing)
@@ -170,8 +189,9 @@ namespace MotionControllers.Core
             if (controllerLobby is IControllerUiPresenter presenter)
             {
                 presenter.PresentControllerUi(ControllerUiMode, Busy || IsPaused);
-                presenter.PresentControllerStates(GameSession as IGameControllerFeedback);
+                presenter.PresentControllerStates(Preparation != null ? (IGameControllerFeedback)Preparation : GameSession as IGameControllerFeedback);
             }
+            Preparation?.Tick();
             if (Screen != AppScreen.Playing || Busy) return;
             if (GameSession is IGameCompletion complete && complete.IsComplete) { FinishGame(); return; }
             bool blocked = requiredControllers.Count < (CurrentGame != null ? CurrentGame.minimumPlayers : 1);
@@ -185,6 +205,6 @@ namespace MotionControllers.Core
             Time.timeScale = IsPaused ? 0 : runningTimeScale;
         }
         private void OnEnable() { runningTimeScale = Time.timeScale > 0 ? Time.timeScale : 1; }
-        private void OnDisable() { StopAllCoroutines(); Time.timeScale = runningTimeScale; }
+        private void OnDisable() { Preparation?.Dispose(); Preparation = null; StopAllCoroutines(); Time.timeScale = runningTimeScale; }
     }
 }

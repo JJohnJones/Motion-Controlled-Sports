@@ -38,7 +38,7 @@ namespace MotionControllers.SwordDuel
                 var angular=Pose*f.AngularVelocity;AngularSpeed=angular.magnitude;
                 var planar=new Vector2(-angular.z,-angular.x);if(settings.leftHanded)planar.x=-planar.x;
                 MotionDirection=planar.normalized;
-                if(Sample(f.TimestampMs/1000,planar,canAttack && !detected,settings,out var sample)){attack=sample;detected=true;}
+                if(Sample(f.TimestampMs/1000,planar*c.MotionSensitivity,canAttack && !detected,settings,out var sample)){attack=sample;detected=true;}
             }
             return detected;
         }

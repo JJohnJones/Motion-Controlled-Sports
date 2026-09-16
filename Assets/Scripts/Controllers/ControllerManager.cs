@@ -19,6 +19,7 @@ namespace MotionControllers
             int number = 1;
             while (playerNumbers.ContainsValue(number)) number++;
             playerNumbers.Add(id, number);
+            Core.PlayerPreferences.Apply(sessions[id], number);
             return true;
         }
         public int GetPlayerNumber(string id) => playerNumbers.TryGetValue(id, out int number) ? number : 0;

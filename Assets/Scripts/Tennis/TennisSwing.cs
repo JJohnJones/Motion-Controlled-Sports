@@ -10,7 +10,7 @@ namespace MotionControllers.Tennis
         [Min(.1f)] public float cooldownSeconds = .4f;
         [Min(.1f)] public float sensitivity = 1;
         [Range(.1f, 2)] public float orientationSensitivity = 1;
-        [Range(10, 150)] public float maximumVisualRotation = 100;
+        [Min(180)] public float maximumVisualDegreesPerSecond = 1440;
         [Min(1)] public float responseSpeed = 25;
     }
     public sealed class TennisSwing
@@ -38,7 +38,7 @@ namespace MotionControllers.Tennis
                 if (frame.Sequence <= sequence) continue;
                 sequence = frame.Sequence;
                 if (session.Latest.TimestampMs - frame.TimestampMs > 220 || !frame.HasAngularVelocity) continue;
-                Sample(frame.Sequence, frame.TimestampMs / 1000, now, frame.AngularVelocity, session.RawRotation, settings);
+                Sample(frame.Sequence, frame.TimestampMs / 1000, now, frame.AngularVelocity * session.MotionSensitivity, session.RawRotation, settings);
             }
         }
         public void Sample(long seq, double time, double now, Vector3 angular, Quaternion face, TennisSwingSettings settings)

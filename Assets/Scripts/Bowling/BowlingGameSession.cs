@@ -18,6 +18,8 @@ namespace MotionControllers.Bowling
         private string status = "Preparing players…";
         public string Status => Phase == BowlingMatchPhase.Ready && bowling != null ? bowling.Message : status;
         public event Action<string> ActivePlayerChanged;
+        public event Action<string> RollResolved;
+        private BowlingPresentation presentation;
         private bool paused, resetRack;
         private float transitionRemaining;
         public string LastRollSummary { get; private set; } = "";
@@ -40,10 +42,14 @@ namespace MotionControllers.Bowling
                 players.Add(new BowlingPlayer(id, "Player " + (number > 0 ? number : players.Count + 1)));
             }
             Match = new BowlingMatch(players); bowling.Initialize(); bowling.ManageMatch();
+            if (Application.isPlaying) {
+                presentation = GetComponent<BowlingPresentation>() ?? gameObject.AddComponent<BowlingPresentation>();
+                presentation.Initialize(bowling, this);
+            }
             bowling.ThrowLaunched -= OnThrow; bowling.ThrowLaunched += OnThrow;
             bowling.pinRack.ResetPins(); bowling.ball.ResetBall(); BeginTransition(true);
         }
-        public void SetPaused(bool value) { paused = value; if (bowling != null) bowling.SetPaused(value); }
+        public void SetPaused(bool value) { paused = value; presentation?.SetPaused(value); if (bowling != null) bowling.SetPaused(value); }
         private void RefreshScoreboard() { if (Match != null) Scoreboard = BowlingScorePresentation.Build(Match, Phase == BowlingMatchPhase.Ready ? "Your turn" : status); }
         private void BeginTransition(bool fullRack) {
             resetRack = fullRack; bowling.LockTurn(); Phase = BowlingMatchPhase.TurnTransition;
@@ -63,6 +69,7 @@ namespace MotionControllers.Bowling
                 var outcome = Match.RecordRoll(fallen);
                 LastRollSummary = delivered.Strike && delivered.Rolls.Count == 1 ? "Strike!" :
                     delivered.Spare && delivered.Rolls.Count == 2 ? "Spare!" : fallen == 0 ? "Miss." : fallen + " pins.";
+                RollResolved?.Invoke(LastRollSummary);
                 if (resolution.TimedOut) Debug.Log("[Bowling] Pin-settle timeout reached; counted final poses and stopped residual motion.");
                 bowling.ball.ResetBall();
                 if (outcome.GameComplete) { Complete(); return; }

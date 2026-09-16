@@ -53,7 +53,7 @@ namespace MotionControllers.Editor
             var definition=AssetDatabase.LoadAssetAtPath<GameDefinition>(CreateApplicationShell.Generated+"/Tennis.asset");
             definition.available=true;definition.minimumPlayers=1;definition.maximumPlayers=4;definition.scenePath=ScenePath;
             definition.description="Swing, rally and serve. Singles or doubles with friends.";
-            definition.instructions="Calibrate in a comfortable ready pose. Tap the phone to toss on your serve, then swing. During rallies, time your swing as the ball reaches your racket. Tilt the racket to aim; faster swings hit harder.";
+            definition.instructions="Calibrate flat, screen face up, top pointing forward toward the display. Then hold the phone upright, top up, like a racket. Tap the phone to toss on your serve, then swing. During rallies, time your swing as the ball reaches your racket. Tilt the racket to aim; faster swings hit harder.";
             definition.controllerUiMode="tennis";EditorUtility.SetDirty(definition);
             EditorBuildSettings.scenes=EditorBuildSettings.scenes.Where(s=>s.path!=ScenePath).Concat(new[]{new EditorBuildSettingsScene(ScenePath,true)}).ToArray();
             AssetDatabase.SaveAssets();

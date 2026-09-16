@@ -74,6 +74,7 @@ namespace MotionControllers.SwordDuel
         {
             if(paused || Match==null || IsComplete)return;
             foreach(var f in Fighters)if(!f.AI && source!=null && source.TryGetController(f.Id,out var c)){
+                f.LeftHanded=c.LeftHanded;
                 bool attack=f.Motion.Read(c,Time.realtimeSinceStartupAsDouble,Phase==SwordRoundPhase.Duel && f.Action==SwordAction.Guard,motion,out var input);
                 f.PreviousGuard=f.GuardBlade;
                 f.GuardPose=Quaternion.Slerp(f.GuardPose,f.Motion.Pose,1-Mathf.Exp(-motion.response*Time.deltaTime));

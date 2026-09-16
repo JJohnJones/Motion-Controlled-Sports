@@ -19,6 +19,9 @@ namespace MotionControllers.Tennis
         public Vector3 Forward => Team == 0 ? Vector3.forward : Vector3.back;
         public bool Miss;
         public Quaternion Face = Quaternion.identity;
+        private Quaternion previousPhone, continuousTarget;
+        private int orientationRevision = -1;
+        private bool wasFresh;
         public Vector3 Home(bool doubles) => new Vector3(doubles ? (Slot < 2 ? -2.5f : 2.5f) * (Team == 0 ? -1 : 1) : 0, 0, Team == 0 ? -8.5f : 8.5f);
         public void Move(Vector3 ball, bool incoming, bool doubles, float dt, TennisMovementSettings settings)
         {
@@ -48,13 +51,26 @@ namespace MotionControllers.Tennis
         public void Orient(ControllerSession session, double now, float dt, TennisSwingSettings settings)
         {
             Swing.Read(session,now,settings);
-            if (!session.IsCalibrated) return;
-            Face = RacketRelativeRotation(session);
-            var desired = Quaternion.SlerpUnclamped(Quaternion.identity, Face, settings.orientationSensitivity);
-            desired = Quaternion.RotateTowards(Quaternion.identity,desired,settings.maximumVisualRotation);
-            Face = desired;
-            var world = Quaternion.LookRotation(Forward) * desired;
-            Racket.rotation = Quaternion.Slerp(Racket.rotation, world, 1 - Mathf.Exp(-settings.responseSpeed * dt));
+            bool fresh = session.IsCalibrated && session.HasFrame && now - session.Latest.ReceivedAtSeconds <= .35;
+            if (!fresh) { wasFresh = false; return; }
+            var phone = RacketRelativeRotation(session);
+            if (!wasFresh || orientationRevision != session.CalibrationRevision)
+            { previousPhone = continuousTarget = phone; orientationRevision = session.CalibrationRevision; }
+            else
+            {
+                // Scale small relative steps, never clamp the shortest absolute angle at 180 degrees.
+                var delta = Quaternion.Inverse(previousPhone) * phone;
+                continuousTarget = (continuousTarget * Quaternion.SlerpUnclamped(Quaternion.identity, delta, settings.orientationSensitivity)).normalized;
+                previousPhone = phone;
+            }
+            wasFresh = true;
+            Face = continuousTarget;
+            var world = Quaternion.LookRotation(Forward) * Face;
+            var smooth = Quaternion.Slerp(Racket.rotation, world, 1 - Mathf.Exp(-settings.responseSpeed * dt));
+            Racket.rotation = Quaternion.RotateTowards(Racket.rotation, smooth, settings.maximumVisualDegreesPerSecond * dt);
+            var anchor = Racket.localPosition;
+            anchor.x = (session.LeftHanded ? -.65f : .65f) * (Team == 0 ? 1 : -1);
+            Racket.localPosition = anchor;
         }
     }
 }

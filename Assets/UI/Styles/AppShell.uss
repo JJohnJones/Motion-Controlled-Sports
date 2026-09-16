@@ -241,3 +241,17 @@ Button:disabled { opacity: .5; }
 .playing .screen-content { max-width: none; }
 .playing .hud-status { text-shadow: 0 1px 3px black; }
 .playing.scoreboard-game .hud-top Button { border-width: 1px; border-bottom-width: 2px; }
+
+.ready-layout { flex-direction: row; flex-grow: 1; min-height: 0; align-items: center; }
+.ready-guide { flex-grow: 1; flex-basis: 0; margin-right: 28px; padding: 24px; }
+.ready-roster { flex-grow: 1; flex-basis: 0; }
+.ready-heading { font-size: 23px; -unity-font-style: bold; margin-bottom: 8px; color: rgb(234,255,175); }
+.ready-player { font-size: 18px; margin-bottom: 16px; white-space: normal; }
+.settings-note { font-size: 14px; white-space: normal; color: rgb(220,243,255); margin-top: 8px; margin-bottom: 12px; }
+.settings-panel { width: 580px; }
+.settings-panel .unity-base-field { min-height: 38px; margin-bottom: 12px; align-items: center; }
+.settings-panel .unity-base-field__label { min-width: 185px; font-size: 18px; color: white; }
+.settings-panel .unity-base-popup-field__input { background-color: rgb(9,56,104); border-width: 1px; border-color: rgb(149,216,247); border-radius: 8px; padding: 6px 10px; }
+.settings-panel .unity-base-popup-field__text { color: white; font-size: 17px; }
+.settings-panel .unity-base-slider__tracker { height: 6px; background-color: rgb(8,47,92); }
+.settings-panel .unity-base-slider__dragger { background-color: rgb(228,255,161); border-radius: 10px; width: 18px; height: 18px; }

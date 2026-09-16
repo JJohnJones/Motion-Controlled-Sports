@@ -112,7 +112,7 @@ namespace MotionControllers.Editor
         {
             var game = ScriptableObject.CreateInstance<GameDefinition>(); game.displayName = title; game.description = description;
             if (mode == "bowling") game.maximumPlayers = 4;
-            if (mode == "bowling") game.instructions = "Calibrate facing down the lane. Aim, hold the phone button, swing, then lift to release.";
+            if (mode == "bowling") game.instructions = "Calibrate flat, screen face up, top pointing down the lane. Aim, hold the phone button, swing, then lift to release.";
             game.scenePath = path; game.available = available; game.controllerUiMode = mode; game.accent = accent;
             AssetDatabase.CreateAsset(game, Generated + "/" + title.Replace(" ", "") + ".asset"); return game;
         }

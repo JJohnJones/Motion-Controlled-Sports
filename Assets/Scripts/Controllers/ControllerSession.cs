@@ -9,6 +9,8 @@ namespace MotionControllers
         private Quaternion reference = Quaternion.identity;
         private float calibrationScreenAngle;
         public string Id { get; }
+        public float MotionSensitivity { get; set; } = 1;
+        public bool LeftHanded { get; set; }
         public MotionFrame Latest { get; private set; }
         public bool HasFrame { get; private set; }
         public bool IsCalibrated { get; private set; }

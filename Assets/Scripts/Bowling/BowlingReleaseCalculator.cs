@@ -88,7 +88,7 @@ namespace MotionControllers.Bowling
             result.WristRollDegrees = Mathf.DeltaAngle(session.CalibrationDeviceAngles.z, latest.DeviceAnglesDegrees.z);
             result.Spin = Mathf.Clamp(result.WristRollDegrees / Mathf.Max(5, settings.fullSpinRollDegrees), -1, 1);
             // Peak tolerates event cadence near lift-off; current speed keeps the release relevant.
-            result.EffectiveSwingSpeed = (0.65f * result.PeakAngularSpeed + 0.35f * result.CurrentAngularSpeed) * Mathf.Max(0.1f, settings.sensitivity);
+            result.EffectiveSwingSpeed = (0.65f * result.PeakAngularSpeed + 0.35f * result.CurrentAngularSpeed) * Mathf.Max(0.1f, settings.sensitivity) * session.MotionSensitivity;
             float minimum = Mathf.Max(0.01f, settings.minimumSwingSpeed);
             if (result.EffectiveSwingSpeed < minimum) { result.Reason = "Swing too slow. Hold, swing, then release again."; return result; }
             float t = Mathf.InverseLerp(minimum, Mathf.Max(minimum + 0.01f, settings.maximumSwingSpeed), result.EffectiveSwingSpeed);

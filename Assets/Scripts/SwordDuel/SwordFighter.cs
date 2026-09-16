@@ -11,7 +11,7 @@ namespace MotionControllers.SwordDuel
         public Material BodyMaterial;
         public Color Color, FeedbackColor=UnityEngine.Color.white;
         public int Index;
-        public bool Ready;
+        public bool Ready, LeftHanded;
         public readonly SwordMotion Motion=new SwordMotion();
         public SwordAction Action= SwordAction.Guard;
         public SwordAttack Attack;
@@ -25,7 +25,7 @@ namespace MotionControllers.SwordDuel
         public Vector3 PreviousHand,PreviousTip;
         public bool PreviousGuardMatch;
         public Vector3 Forward=>Index==0?Vector3.forward:Vector3.back;
-        public Vector3 Hand=>Root.position+Vector3.up*1.25f+Forward*.3f;
+        public Vector3 Hand=>Root.position+Vector3.up*1.25f+Forward*.3f+(LeftHanded ? Facing*Vector3.left*.2f : Vector3.zero);
         public Vector3 Torso=>Root.position+Vector3.up*1.15f;
         public Quaternion Facing=>Quaternion.LookRotation(Forward);
         public void StartAttack(SwordAttack attack){if(Action!=SwordAction.Guard)return;Attack=attack;Action=SwordAction.Windup;ActionTime=0;ContactResolved=false;}

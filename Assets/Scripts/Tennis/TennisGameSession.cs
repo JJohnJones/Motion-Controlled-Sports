@@ -15,6 +15,10 @@ namespace MotionControllers.Tennis
         public TennisShotSettings shots = new TennisShotSettings();
         public TennisMovementSettings movement = new TennisMovementSettings();
         public bool diagnostics;
+        public event Action<TennisFeedback> Feedback;
+        private TennisPresentation presentation;
+        private void Present(TennisFeedbackKind kind, string text=null, float strength=0, int player=-1) =>
+            Feedback?.Invoke(new TennisFeedback {Kind=kind,Message=text,Strength=strength,Player=player,Position=flight.Position});
         public TennisMatch Match { get; private set; }
         public TennisPhase Phase { get; private set; }
         public TennisPlayer[] Players { get; private set; }
@@ -58,6 +62,7 @@ namespace MotionControllers.Tennis
                 var label=labelObject.AddComponent<TextMesh>();label.text=player.Name;label.characterSize=.22f;label.fontSize=40;label.anchor=TextAnchor.MiddleCenter;label.color=color;
                 label.transform.rotation=Quaternion.Euler(50,0,0);
             }
+            if(Application.isPlaying){presentation=GetComponent<TennisPresentation>() ?? gameObject.AddComponent<TennisPresentation>();presentation.Initialize(this);}
             BeginPoint();
         }
         private Transform Shape(PrimitiveType type, Transform parent, Vector3 pos, Vector3 scale, Color color)
@@ -68,7 +73,7 @@ namespace MotionControllers.Tennis
             return go.transform;
         }
         private string TeamName(int team) => string.Join(" + ",Players.Where(p=>p.Team==team).Select(p=>p.Name));
-        public void SetPaused(bool value) { if(paused==value)return; paused=value; if(value && Players!=null) foreach(var p in Players)p.Swing.Reset(); }
+        public void SetPaused(bool value) { if(paused==value)return; paused=value; presentation?.SetPaused(value); if(value && Players!=null) foreach(var p in Players)p.Swing.Reset(); }
         private void OnDestroy() { if(source!=null)source.ButtonChanged-=Button;foreach(var m in materials)Destroy(m); }
         private void Button(ControllerButtonEvent input)
         {
@@ -85,6 +90,7 @@ namespace MotionControllers.Tennis
             var receiver=Players[Match.ReceiverSlot];receiver.Avatar.position=new Vector3((Match.DeuceSide?-1:1)*sign*2,0,sign*8.5f);
             ballVisual.position=server.Contact;flight.Position=ballVisual.position;
             message=$"{server.Name} serves · {(Match.Faults==0?"First":"Second")} serve · Tap phone to toss";
+            Present(TennisFeedbackKind.Ready, server.Name + " · READY TO SERVE");
         }
         private void Toss()
         {
@@ -92,6 +98,7 @@ namespace MotionControllers.Tennis
             var server=Players[Match.ServerSlot];server.Swing.Reset();
             flight.Launch(server.Contact,new TennisShot {Velocity=Vector3.up*4.5f});
             message=server.Name+" · Swing to serve!";
+            Present(TennisFeedbackKind.Toss,"SWING TO SERVE");
         }
         private void Update()
         {
@@ -115,8 +122,9 @@ namespace MotionControllers.Tennis
             }
             if(Phase!=TennisPhase.Rally)return;
             flightTime+=dt;flight.Step(dt);ballVisual.position=flight.Position;
-            if(flight.Net) {if(serveFlight)Fault("Serve into net");else Point(1-lastTeam,"Net");return;}
+            if(flight.Net) {Present(TennisFeedbackKind.Net,"NET");if(serveFlight)Fault("Serve into net");else Point(1-lastTeam,"Net");return;}
             if(flight.Ground) {
+                Present(TennisFeedbackKind.Bounce);
                 bool legal=TennisCourt.InCourt(flight.Position,Players.Length==4) && TennisCourt.Side(flight.Position)!=lastTeam;
                 if(serveFlight) {
                     if(!legal || !TennisCourt.InServiceBox(flight.Position,Match.ServerTeam,Match.DeuceSide)) {Fault("Service fault");return;}
@@ -149,14 +157,16 @@ namespace MotionControllers.Tennis
             var shot=TennisShots.Calculate(flight.Position,p.Team,peak,face,direction,timing,flight.Velocity,serving,Match.DeuceSide,shots);
             flight.Launch(flight.Position,shot);lastTeam=p.Team;bounces=0;hitAge=flightTime=0;serveFlight=serving;returnOfServe=serving;
             p.Swing.Consume();Phase=TennisPhase.Rally;message=$"Rally · {p.Name} {(direction.y<0?"backhand":"forehand")}";
+            Present(TennisFeedbackKind.Racket,p.Name+" · RALLY",shot.Velocity.magnitude,p.Slot);
             foreach(var other in Players)if(other.AI)other.Miss=UnityEngine.Random.value<movement.aiMissChance;
             if(diagnostics)Debug.Log($"[Tennis] {p.Name} id={p.Id} face={face.eulerAngles} peak={peak:F2} direction={direction} timing={timing:F2} velocity={shot.Velocity} spin={shot.Spin:F2}");
         }
         private void Fault(string reason)
         {
             bool doubleFault=Match.Fault();message=doubleFault?"Double fault":reason+" · Second serve";AfterPoint();
+            Present(TennisFeedbackKind.Fault,message);
         }
-        private void Point(int team,string reason) {Match.AwardPoint(team);message=TeamName(team)+" wins point · "+reason;AfterPoint();}
+        private void Point(int team,string reason) {Match.AwardPoint(team);message=TeamName(team)+" wins point · "+reason;AfterPoint();Present(TennisFeedbackKind.Point,message);}
         private void AfterPoint() {if(diagnostics)Debug.Log($"[Tennis point] {message}; ball={flight.Position}; contacts={RallyContacts}; bounces={bounces}");Phase=IsComplete?TennisPhase.Complete:TennisPhase.PointResult;phaseTime=0;foreach(var p in Players)p.Swing.Reset();}
         public GameResult Finish() => new GameResult(IsComplete?TeamName(Match.Winner)+" wins!":"Tennis in progress", $"{TeamName(0)}  {Match.Games[0]} – {Match.Games[1]}  {TeamName(1)}");
     }

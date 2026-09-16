@@ -91,7 +91,18 @@ namespace MotionControllers.Tests
                 view.MoveGameSelection(1);
                 Assert.That(doc.rootVisualElement.Query<GameCard>().ToList()[1].Selected, Is.True);
                 flow.games = originalCatalog; flow.ShowGameSelect(); yield return Settle(flow);
-                var definition = flow.games[0]; flow.Play(definition); yield return Settle(flow);
+                var definition = flow.games[0]; flow.PrepareGame(definition); yield return Settle(flow);
+                Assert.That(flow.Screen, Is.EqualTo(AppScreen.Ready));
+                Assert.That(flow.GameSession, Is.Null);
+                Assert.That(flow.ControllerUiMode, Is.EqualTo("ready-bowling"));
+                flow.StartPreparedGame(); Assert.That(flow.Screen, Is.EqualTo(AppScreen.Ready));
+                foreach (var slot in fake.Slots) {
+                    manager.Submit(new MotionFrame {ControllerId=slot.ControllerId,Sequence=2,TimestampMs=2,Orientation=Quaternion.identity,ReceivedAtSeconds=Time.realtimeSinceStartupAsDouble},true);
+                    manager.SubmitButton(new ControllerButtonEvent {ControllerId=slot.ControllerId,Button=ControllerButton.Primary,Phase=ButtonPhase.Pressed,Sequence=1,TimestampMs=1});
+                    manager.SubmitButton(new ControllerButtonEvent {ControllerId=slot.ControllerId,Button=ControllerButton.Primary,Phase=ButtonPhase.Released,Sequence=2,TimestampMs=2});
+                }
+                Assert.That(flow.Preparation.AllReady, Is.True);
+                flow.StartPreparedGame(); yield return Settle(flow);
                 Assert.That(flow.Screen, Is.EqualTo(AppScreen.Playing), flow.Error);
                 Assert.That(flow.GameSession, Is.InstanceOf<BowlingGameSession>());
                 Assert.That(((BowlingGameSession)flow.GameSession).Match.Players.Count, Is.EqualTo(4));
@@ -104,6 +115,12 @@ namespace MotionControllers.Tests
                 Assert.That(doc.rootVisualElement.Q(className: "hud-bottom"), Is.Null);
                 Assert.That(doc.rootVisualElement.Q(className: "hud-help"), Is.Null);
                 Assert.That(doc.rootVisualElement.Q<GameScoreboardView>().layout.height, Is.LessThanOrEqualTo(105), "Compact scoreboard must leave the lane visible");
+                var alleyPresentation = ((BowlingGameSession)flow.GameSession).GetComponent<BowlingPresentation>();
+                Assert.That(alleyPresentation, Is.Not.Null);
+                var alley = alleyPresentation.transform.Find("Alley environment (presentation)");
+                Assert.That(alley, Is.Not.Null);
+                foreach(var collider in alley.GetComponentsInChildren<Collider>()) Assert.That(collider.enabled,Is.False,"Alley scenery must not alter gameplay collision");
+                Assert.That(alley.Find("Visual pinsetter sweep"),Is.Not.Null);
                 Assert.That(flow.menuCamera.enabled, Is.False);
                 Assert.That(flow.GameCamera, Is.Not.Null);
                 Assert.That(flow.GameCamera.isActiveAndEnabled, Is.True);
@@ -127,9 +144,9 @@ namespace MotionControllers.Tests
                     "The scoreboard must not intercept the Pause button's pointer area");
                 using (var click = NavigationSubmitEvent.GetPooled()) { click.target = pauseButton; pauseButton.SendEvent(click); }
                 Assert.That(Time.timeScale, Is.Zero);
-                manager.Submit(new MotionFrame { ControllerId = "shell-phone", Sequence = 2, TimestampMs = 2, Orientation = Quaternion.identity,
+                manager.Submit(new MotionFrame { ControllerId = "shell-phone", Sequence = 3, TimestampMs = 3, Orientation = Quaternion.identity,
                     ReceivedAtSeconds = Time.realtimeSinceStartupAsDouble });
-                Assert.That(identity.Latest.Sequence, Is.EqualTo(2), "Input must remain alive during pause");
+                Assert.That(identity.Latest.Sequence, Is.EqualTo(3), "Input must remain alive during pause");
                 flow.Resume(); Assert.That(Time.timeScale, Is.EqualTo(1));
                 fake.online = false; yield return null; yield return null;
                 Assert.That(flow.ConnectionBlocked, Is.True); Assert.That(Time.timeScale, Is.Zero);
@@ -169,6 +186,12 @@ namespace MotionControllers.Tests
                     for(int i=0;i<tennis.Players.Length;i++) {
                         Assert.That(tennis.Players[i].AI,Is.EqualTo(i>=humans));Assert.That(tennis.Players[i].Team,Is.EqualTo(i%2));
                     }
+                    var venue = tennis.transform.Find("Tennis venue (presentation)");
+                    Assert.That(venue,Is.Not.Null);
+                    foreach(var collider in venue.GetComponentsInChildren<Collider>())Assert.That(collider.enabled,Is.False,"Tennis scenery must not affect contact or boundaries");
+                    Assert.That(tennis.GetComponent<MotionControllers.Tennis.TennisPresentation>(),Is.Not.Null);
+                    int racketFeedback=0,tossFeedback=0;
+                    tennis.Feedback+=e=>{if(e.Kind==MotionControllers.Tennis.TennisFeedbackKind.Racket)racketFeedback++;if(e.Kind==MotionControllers.Tennis.TennisFeedbackKind.Toss)tossFeedback++;};
                     Assert.That(flow.ControllerUiMode,Is.EqualTo("tennis"));
                     Assert.That(tennis.ControllerState("shell-phone"),Is.EqualTo("serve"));
                     manager.SubmitButton(new ControllerButtonEvent {ControllerId="shell-phone",Button=ControllerButton.Primary,Phase=ButtonPhase.Pressed,Sequence=1000+humans,TimestampMs=1000+humans});
@@ -179,6 +202,7 @@ namespace MotionControllers.Tests
                     gesture.Sample(2,.01,now,Vector3.up*8,Quaternion.identity,tennis.swing);
                     gesture.Sample(3,.1,now,Vector3.up*8,Quaternion.identity,tennis.swing);
                     tennis.TickGame(.2f);Assert.That(tennis.Phase,Is.EqualTo(MotionControllers.Tennis.TennisPhase.Rally));
+                    Assert.That(tossFeedback,Is.EqualTo(1));Assert.That(racketFeedback,Is.EqualTo(1));
                     flow.TogglePause();var ballPosition=tennis.BallPosition;tennis.TickGame(1);Assert.That(tennis.BallPosition,Is.EqualTo(ballPosition));flow.Resume();
                     while(!tennis.Match.Complete)tennis.Match.AwardPoint(0);
                     yield return null;yield return Settle(flow);Assert.That(flow.Screen,Is.EqualTo(AppScreen.Results));

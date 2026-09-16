@@ -15,7 +15,9 @@ namespace MotionControllers.UI
         private GameScoreboardView scoreboard;
         private GameVitalsView vitals;
         private Image qr;
-        private Button continueButton, againButton;
+        private Button continueButton, againButton, startButton;
+        private bool settingsOpen;
+        private readonly List<Label> readyPlayers = new List<Label>();
         private readonly List<GameCard> cards = new List<GameCard>();
         private readonly List<Label> playerHealth = new List<Label>();
         private double nextRefresh;
@@ -67,13 +69,14 @@ namespace MotionControllers.UI
         private void OnKey(KeyDownEvent e)
         {
             if (flow.Busy) return;
+            if (settingsOpen) { if (e.keyCode == KeyCode.Escape) { settingsOpen = false; Render(); e.StopPropagation(); } return; }
             if (flow.Screen == AppScreen.GameSelect && (e.keyCode == KeyCode.PageDown || e.keyCode == KeyCode.PageUp))
             { ChangeGamePage(e.keyCode == KeyCode.PageDown ? 1 : -1); e.StopPropagation(); return; }
             if (flow.Screen == AppScreen.GameSelect && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.Space) && e.target is GameCard)
-            { if (catalog.Count > gamePage * 4 + selectedTile) flow.Play(catalog[gamePage * 4 + selectedTile]); e.StopPropagation(); return; }
+            { if (catalog.Count > gamePage * 4 + selectedTile) flow.PrepareGame(catalog[gamePage * 4 + selectedTile]); e.StopPropagation(); return; }
             if (e.keyCode != KeyCode.Escape) return;
             if (flow.Screen == AppScreen.Playing) flow.TogglePause();
-            else if (flow.Screen == AppScreen.Results) flow.ShowGameSelect();
+            else if (flow.Screen == AppScreen.Results || flow.Screen == AppScreen.Ready) flow.ShowGameSelect();
             else flow.ShowTitle();
             e.StopPropagation();
         }
@@ -85,6 +88,7 @@ namespace MotionControllers.UI
         { var button = new Button(clicked) { text = title }; if (primary) button.AddToClassList("primary"); parent.Add(button); return button; }
         private void Render()
         {
+            readyPlayers.Clear(); startButton = null;
             scoreboard = null; vitals = null; screen.Clear(); modal.Clear(); cards.Clear(); playerHealth.Clear(); qr = null; status = hud = null; continueButton = againButton = null;
             shell.EnableInClassList("title-screen", flow.Screen == AppScreen.Title);
             shell.EnableInClassList("playing", flow.Screen == AppScreen.Playing);
@@ -95,15 +99,17 @@ namespace MotionControllers.UI
                 case AppScreen.Title: Title(content); break;
                 case AppScreen.Pairing: Pairing(content); break;
                 case AppScreen.GameSelect: GameSelect(content); break;
+                case AppScreen.Ready: Ready(content); break;
                 case AppScreen.Playing: Playing(content); break;
                 case AppScreen.Results: Results(content); break;
             }
             if (!string.IsNullOrEmpty(flow.Error)) Text(content, flow.Error, "connection-notice");
-            modal.style.display = flow.Screen == AppScreen.Playing && flow.IsPaused ? DisplayStyle.Flex : DisplayStyle.None;
-            if (flow.Screen == AppScreen.Playing && flow.IsPaused) Pause();
+            modal.style.display = settingsOpen || flow.Screen == AppScreen.Playing && flow.IsPaused ? DisplayStyle.Flex : DisplayStyle.None;
+            if (settingsOpen) modal.Add(new SettingsPanel(flow, () => { settingsOpen = false; Render(); }));
+            else if (flow.Screen == AppScreen.Playing && flow.IsPaused) Pause();
             AeroSurfaces.Apply(shell);
             Refresh();
-            var first = (flow.IsPaused ? modal : screen).Q<Button>();
+            var first = (settingsOpen || flow.IsPaused ? modal : screen).Q<Button>();
             first?.schedule.Execute(() => first.Focus());
         }
         private void Title(VisualElement parent)
@@ -113,7 +119,7 @@ namespace MotionControllers.UI
             Text(parent, "PHONE", "logo logo-top");
             Text(parent, "SPORTS", "logo logo-bottom");
             Text(parent, "Pick up your phone. Jump into the game.", "title-tagline");
-            var actions = Box(parent, "title-actions"); Action(actions, "Play", flow.ShowPairing, true); Action(actions, "Quit", flow.Quit);
+            var actions = Box(parent, "title-actions"); Action(actions, "Play", flow.ShowPairing, true); Action(actions, "Settings", OpenSettings); Action(actions, "Quit", flow.Quit);
             //Text(parent, "BOWLING  •  TENNIS  •  SWORD DUEL", "eyebrow");
         }
 
@@ -144,6 +150,7 @@ namespace MotionControllers.UI
             deck = Box(parent, "game-deck");
             var actions = Box(parent, "selector-actions");
             Action(actions, "Controllers", flow.ShowPairing);
+            Action(actions, "Settings", OpenSettings);
             previousPage = Action(actions, "◀ Previous", () => ChangeGamePage(-1));
             pageLabel = Text(actions, "", "page-indicator");
             nextPage = Action(actions, "Next ▶", () => ChangeGamePage(1));
@@ -160,7 +167,7 @@ namespace MotionControllers.UI
                 {
                     int index = gamePage * 4 + rowIndex * 2 + column;
                     if (index >= catalog.Count) { Box(row, "card-host empty-tile"); continue; }
-                    var card = new GameCard(catalog[index], index, gameCardTemplate, flow.Play, SelectTile);
+                    var card = new GameCard(catalog[index], index, gameCardTemplate, flow.PrepareGame, SelectTile);
                     row.Add(card); cards.Add(card);
                 }
             }
@@ -171,6 +178,30 @@ namespace MotionControllers.UI
             AeroSurfaces.Apply(deck); Refresh();
         }
 
+        private void OpenSettings() { settingsOpen = true; Render(); }
+        private void Ready(VisualElement parent)
+        {
+            Text(parent, "BEFORE YOU PLAY", "eyebrow");
+            Text(parent, flow.CurrentGame.displayName + " · Get ready", "heading");
+            var row = Box(parent, "ready-layout");
+            var guide = Box(row, "panel ready-guide");
+            Text(guide, "1  Calibrate flat", "ready-heading");
+            Text(guide, GamePreparation.CalibrationInstructions, "body");
+            Text(guide, "2  Pick up and play", "ready-heading");
+            Text(guide, GamePreparation.GripInstructions(flow.CurrentGame.controllerUiMode), "body");
+            Text(guide, "Do not recalibrate in the upright playing grip. The flat pose defines forward for every game.", "settings-note");
+            var players = Box(row, "ready-roster");
+            if (flow.Preparation != null) foreach (var id in flow.Preparation.Players)
+            {
+                int number = 0; foreach (var slot in flow.Lobby.Slots) if (slot.ControllerId == id) number = slot.PlayerNumber;
+                Text(players, "PLAYER " + number, "ready-heading");
+                readyPlayers.Add(Text(players, "Calibrate on your phone", "ready-player"));
+            }
+            Text(players, "Each player taps Ready on their phone. Then start on the big screen.", "body");
+            var actions = Box(parent, "actions");
+            startButton = Action(actions, "Start game", flow.StartPreparedGame, true);
+            Action(actions, "Settings", OpenSettings); Action(actions, "Back", flow.ShowGameSelect);
+        }
         private void Playing(VisualElement parent)
         {
             parent.style.justifyContent = Justify.SpaceBetween;
@@ -198,8 +229,9 @@ namespace MotionControllers.UI
             Text(panel, flow.ConnectionBlocked ? "Controller interrupted" : "Paused", "heading");
             Text(panel, flow.ConnectionBlocked ? "Attempting to reconnect. Your player and calibration stay here while recovery runs. Return to Controllers if a new pairing is needed." : "Game paused. Your phone stays connected.", "body");
             var resume = Action(panel, "Resume", flow.Resume, true); resume.SetEnabled(!flow.ConnectionBlocked);
-            Text(panel, flow.CurrentGame.instructions, "body");
+            Text(panel, GamePreparation.CalibrationInstructions + "\n" + GamePreparation.GripInstructions(flow.CurrentGame.controllerUiMode), "body");
             var restart = Action(panel, "Restart Game", flow.Restart); restart.SetEnabled(flow.CurrentGame.CanPlay(flow.Lobby?.ConnectedPlayers ?? 0));
+            Action(panel, "Settings", OpenSettings);
             Action(panel, "Return to game select", flow.ShowGameSelect);
         }
         private void Update()
@@ -216,6 +248,16 @@ namespace MotionControllers.UI
         {
             var lobby = flow.Lobby; int connected = lobby?.ConnectedPlayers ?? 0;
             connectionSummary.text = connected == 0 ? "Connect a phone to play" : connected + (connected == 1 ? " player connected" : " players connected");
+            if (flow.Preparation != null)
+            {
+                for (int i = 0; i < readyPlayers.Count; i++) {
+                    var id = flow.Preparation.Players[i];
+                    bool ready = flow.Preparation.IsReady(id);
+                    readyPlayers[i].text = !lobby.IsConnected(id) ? "Reconnecting…" : ready ? "Ready!" : flow.Preparation.IsCalibrated(id) ? "Pick up your phone and tap Ready" : "Enable motion and calibrate flat";
+                    readyPlayers[i].EnableInClassList("connected", ready);
+                }
+                startButton?.SetEnabled(flow.Preparation.AllReady);
+            }
             if (qr != null) qr.image = lobby?.PairingQr;
             if (status != null) status.text = lobby == null ? "Controller system unavailable" : connected > 0 ? "Ready when you are." : lobby.PairingQr != null ? "Waiting for your first player…" : lobby.Status;
             if (againButton != null) againButton.SetEnabled(flow.CurrentGame != null && flow.CurrentGame.CanPlay(connected));
