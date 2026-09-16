@@ -68,6 +68,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 2f3e0403fe19f0146af9342ec4a66232, type: 2}
   - {fileID: 11400000, guid: 76b69700c1b7b204da195a2320c02b21, type: 2}
   - {fileID: 11400000, guid: ae4121944fd765c4683ac3db3daeedbf, type: 2}
+  menuMusic: {fileID: 8300000, guid: ad8729032fcb403bacb560124fec9590, type: 3}
+  menuMusicVolume: 0.45
   fadeSeconds: 0.2
 --- !u!114 &6356654815306775321
 MonoBehaviour:

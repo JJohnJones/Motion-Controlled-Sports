@@ -65,6 +65,7 @@ namespace MotionControllers.Editor
                 var shell = new GameObject("Application Shell");
                 var lobby = shell.AddComponent<ControllerLobbyAdapter>();
                 var flow = shell.AddComponent<SceneFlowManager>(); flow.controllerLobby = lobby; flow.games = definitions;
+                flow.menuMusic = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/MenuMusic.mp3");
                 var document = shell.AddComponent<UIDocument>(); document.panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>(Generated + "/ShellPanel.asset");
                 document.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/Layout/AppShell.uxml"); document.sortingOrder = 100;
                 var view = shell.AddComponent<AppShellView>(); view.flow = flow;

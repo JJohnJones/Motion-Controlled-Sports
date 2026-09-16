@@ -1,7 +1,7 @@
 .shell { flex-grow: 1; background-color: rgb(12, 19, 31); color: rgb(239, 244, 250); font-size: 20px; }
 .app-header { height: 74px; flex-shrink: 0; padding-left: 44px; padding-right: 44px; flex-direction: row; align-items: center; justify-content: space-between; border-bottom-width: 1px; border-bottom-color: rgb(36, 47, 64); }
 .brand { font-size: 18px; -unity-font-style: bold; letter-spacing: 3px; }
-.connection-summary { color: rgb(113, 223, 190); font-size: 17px; }
+.connection-summary { color: rgb(113, 223, 190); font-size: 17px; display: none; }
 .screen { flex-grow: 1; padding-left: 44px; padding-right: 44px; padding-top: 28px; padding-bottom: 20px; }
 .screen-content { flex-grow: 1; width: 100%; max-width: 1360px; align-self: center; }
 .app-footer { height: 34px; margin-left: 44px; color: rgb(107, 129, 153); font-size: 12px; letter-spacing: 2px; }
@@ -54,7 +54,7 @@ Button.primary:hover { background-color: rgb(162, 255, 219); }
 .shell.playing { background-color: rgba(0, 0, 0, 0); background-image: none; }
 .playing .app-header { background-color: rgba(12, 19, 31, 0.92); }
 .playing .screen { justify-content: space-between; }
-.playing .app-footer { display: none; }
+.app-footer { display: none; }
 .hud-top { flex-direction: row; justify-content: space-between; }
 .hud-bottom { align-self: center; width: 76%; background-color: rgba(12, 19, 31, 0.94); padding: 16px; border-radius: 14px; }
 .hud-status { white-space: normal; font-size: 20px; }
@@ -183,3 +183,61 @@ Button.primary:active { background-color: rgb(52, 137, 38); }
 .game-vitals .unity-progress-bar__background { background-color: rgba(0,42,78,.8); border-radius: 9px; }
 .game-vitals .unity-progress-bar__progress { background-color: rgb(28,174,180); border-radius: 9px; border-top-width: 2px; border-top-color: rgb(190,253,255); }
 .game-vitals .unity-progress-bar__title { font-size: 14px; color: white; }
+
+/* Phone Sports: restrained menu chrome and clear desktop focus hierarchy. */
+.app-header { height: 62px; padding-left: 40px; padding-right: 40px; }
+.brand { font-size: 19px; letter-spacing: 2px; }
+.connection-summary { font-size: 14px; padding: 7px 16px; background-color: rgba(0,36,80,.45); }
+.screen { padding: 12px 40px 16px; }
+.screen-content { max-width: 1240px; }
+.app-footer { height: 26px; margin-left: 42px; font-size: 11px; letter-spacing: 2px; }
+.heading { font-size: 36px; margin-top: 0; margin-bottom: 12px; }
+.eyebrow { letter-spacing: 3px; font-size: 12px; }
+Button { border-width: 2px; border-bottom-width: 4px; font-size: 18px; margin-bottom: 8px; }
+Button:focus { border-width: 2px; border-bottom-width: 4px; border-color: rgb(255,244,155); }
+Button:disabled { opacity: .5; }
+.title-screen .brand { visibility: hidden; }
+.logo { font-size: 94px; letter-spacing: 9px; }
+.logo-bottom { font-size: 108px; letter-spacing: 6px; }
+.title-tagline { font-size: 21px; margin-top: 24px; margin-bottom: 24px; }
+.title-actions { width: 300px; margin-bottom: 20px; }
+.title-actions Button { height: 48px; min-height: 48px; }
+.title-actions .primary { height: 62px; font-size: 26px; }
+.panel { border-width: 2px; border-bottom-width: 5px; border-radius: 24px; background-color: rgba(7,76,137,.86); }
+.qr-panel { max-width: 480px; padding: 22px; }
+.qr { width: 290px; height: 290px; border-width: 10px; border-color: white; }
+.qr-caption { font-size: 15px; margin-top: 6px; margin-bottom: 12px; }
+.player-row { min-height: 56px; padding: 10px 18px; border-radius: 18px; margin-bottom: 9px; background-color: rgba(0,56,113,.6); }
+.player-row.player-ready { border-color: rgb(186,244,153); background-color: rgba(12,107,111,.88); }
+.player-name { font-size: 21px; color: white; }
+.player-health { font-size: 16px; }
+.player-list .body { margin-top: 12px; font-size: 16px; }
+.game-deck { padding: 5px 0; }
+.game-row { margin-bottom: 14px; }
+.card-host { border-width: 3px; border-radius: 24px; margin: 0 7px; }
+.card-host.selected { border-color: rgb(232,255,163); }
+.card-host:focus { border-color: white; }
+.game-card { background-color: rgba(0,50,106,.9); }
+.card-art { width: 29%; border-right-width: 1px; border-right-color: rgba(255,255,255,.3); justify-content: flex-end; padding-bottom: 14px; }
+.card-icon { top: 8%; left: 12%; right: 12%; bottom: 23%; }
+.tile-badge { font-size: 10px; letter-spacing: 1px; color: rgb(0,41,75); background-color: rgba(255,255,255,.66); padding: 4px 8px; border-radius: 12px; }
+.card-body { padding: 14px 18px; }
+.card-title { font-size: 25px; white-space: normal; }
+.card-description { font-size: 15px; max-height: 40px; }
+.card-body .eyebrow { letter-spacing: 1px; }
+.card-body Button { height: 40px; min-height: 40px; font-size: 17px; }
+.unavailable .card-art { opacity: .65; }
+.unavailable .game-card { background-color: rgba(25,72,108,.82); }
+.selector-actions { height: 56px; }
+.selector-actions Button { min-height: 42px; height: 42px; font-size: 16px; }
+.page-indicator { font-size: 16px; width: 64px; }
+.result { max-width: 800px; margin-top: 24px; padding: 28px 36px; }
+.result-stat { font-size: 36px; white-space: normal; margin-top: 16px; }
+.result .body { font-size: 18px; }
+.modal-panel { width: 530px; padding: 30px; }
+.modal-panel .heading { font-size: 34px; }
+.modal-panel .body { font-size: 16px; }
+.modal-panel Button { margin-bottom: 10px; }
+.playing .screen-content { max-width: none; }
+.playing .hud-status { text-shadow: 0 1px 3px black; }
+.playing.scoreboard-game .hud-top Button { border-width: 1px; border-bottom-width: 2px; }

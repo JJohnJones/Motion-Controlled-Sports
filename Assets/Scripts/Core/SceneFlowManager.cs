@@ -11,6 +11,12 @@ namespace MotionControllers.Core
     {
         public MonoBehaviour controllerLobby;
         public Camera menuCamera;
+        public AudioClip menuMusic;
+        [Range(0, 1)] public float menuMusicVolume = 0.45f;
+        private void Awake()
+        {
+            if (menuMusic != null) gameObject.AddComponent<MenuMusicPlayer>().Initialize(this, menuMusic, menuMusicVolume);
+        }
         public GameDefinition[] games = Array.Empty<GameDefinition>();
         [Range(0, 1)] public float fadeSeconds = 0.2f;
         public IControllerLobby Lobby => controllerLobby as IControllerLobby;
@@ -81,6 +87,7 @@ namespace MotionControllers.Core
             requiredControllers.Clear(); userPaused = ConnectionBlocked = appliedPause = false;
             if (target == AppScreen.Playing)
             {
+                if (menuCamera != null) menuCamera.enabled = false;
                 CurrentGame = game;
                 AsyncOperation load = null;
                 try { load = SceneManager.LoadSceneAsync(game.scenePath, LoadSceneMode.Additive); }

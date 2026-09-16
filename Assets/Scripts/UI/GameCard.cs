@@ -18,13 +18,15 @@ namespace MotionControllers.UI
             this.Q<Label>("number").text = (index + 1).ToString("00");
             this.Q<Label>("number").style.color = game.accent;
             var icon = this.Q<Image>("icon"); icon.sprite = game.icon;
-            icon.style.display = game.icon == null ? DisplayStyle.None : DisplayStyle.Flex;
+            if (game.icon == null) icon.image = SportEmblems.For(game.controllerUiMode);
+            this.Q<Label>("number").style.display = DisplayStyle.None;
+            icon.style.display = DisplayStyle.Flex;
             this.Q<Label>("players").text = game.minimumPlayers == game.maximumPlayers ?
                 game.minimumPlayers + (game.minimumPlayers == 1 ? " PLAYER" : " PLAYERS") : $"{game.minimumPlayers}–{game.maximumPlayers} PLAYERS";
-            this.Q<Label>("availability").text = game.available ? "READY TO PLAY" : "COMING SOON";
+            this.Q<Label>("availability").text = game.available ? "PLAY NOW" : "COMING SOON";
             EnableInClassList("unavailable", !game.available);
             this.Q("art").style.backgroundImage = new StyleBackground(AeroSurfaces.Gloss);
-            this.Q("art").style.backgroundColor = game.accent;
+            this.Q("art").style.backgroundColor = UnityEngine.Color.Lerp(game.accent, new UnityEngine.Color(.02f, .18f, .32f), .52f);
             RegisterCallback<PointerDownEvent>(_ => { highlighted?.Invoke(this); Focus(); });
             RegisterCallback<FocusInEvent>(_ => highlighted?.Invoke(this));
             play = this.Q<Button>("play"); play.clicked += () => selected(definition);

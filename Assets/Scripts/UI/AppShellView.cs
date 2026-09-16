@@ -86,6 +86,7 @@ namespace MotionControllers.UI
         private void Render()
         {
             scoreboard = null; vitals = null; screen.Clear(); modal.Clear(); cards.Clear(); playerHealth.Clear(); qr = null; status = hud = null; continueButton = againButton = null;
+            shell.EnableInClassList("title-screen", flow.Screen == AppScreen.Title);
             shell.EnableInClassList("playing", flow.Screen == AppScreen.Playing);
             shell.EnableInClassList("scoreboard-game", flow.Screen == AppScreen.Playing);
             var content = Box(screen, "screen-content");
@@ -109,11 +110,11 @@ namespace MotionControllers.UI
         {
             parent.AddToClassList("title-stage");
             Text(parent, "WELCOME TO", "eyebrow");
-            Text(parent, "MOTION", "logo logo-top");
+            Text(parent, "PHONE", "logo logo-top");
             Text(parent, "SPORTS", "logo logo-bottom");
             Text(parent, "Pick up your phone. Jump into the game.", "title-tagline");
-            var actions = Box(parent, "title-actions"); Action(actions, "Let's play", flow.ShowPairing, true); Action(actions, "Quit", flow.Quit);
-            Text(parent, "BOWLING • MORE SPORTS ON THE WAY", "eyebrow");
+            var actions = Box(parent, "title-actions"); Action(actions, "Play", flow.ShowPairing, true); Action(actions, "Quit", flow.Quit);
+            //Text(parent, "BOWLING  •  TENNIS  •  SWORD DUEL", "eyebrow");
         }
 
         private void Pairing(VisualElement parent)
@@ -121,21 +122,23 @@ namespace MotionControllers.UI
             Text(parent, "GET READY", "eyebrow"); Text(parent, "Connect controllers", "heading");
             var row = Box(parent, "pair-row"); var left = Box(row, "panel qr-panel");
             qr = new Image { scaleMode = ScaleMode.ScaleToFit }; qr.AddToClassList("qr"); left.Add(qr);
-            Text(left, "Scan with your phone · same Wi-Fi / LAN", "qr-caption");
-            Action(left, "Copy controller link", () => { if (flow.Lobby?.PairingUrl != null) GUIUtility.systemCopyBuffer = flow.Lobby.PairingUrl; });
+            Text(left, "Scan to join · no app required", "qr-caption");
+            var copy = Action(left, "Copy invite link", () => { if (flow.Lobby?.PairingUrl != null) GUIUtility.systemCopyBuffer = flow.Lobby.PairingUrl; });
+            copy.clicked += () => { copy.text = "Link copied!"; copy.schedule.Execute(() => copy.text = "Copy invite link").StartingIn(1800); };
             var right = Box(row, "player-list");
             for (int i = 0; i < 4; i++)
             {
                 var player = Box(right, "player-row"); Text(player, "Player " + (i + 1), "player-name");
                 playerHealth.Add(Text(player, "Waiting", "player-health"));
             }
-            Text(right, "One connected controller is enough to continue. Enable Motion and calibrate on your phone before playing.", "body");
+            Text(right, "Scan the code, then enable motion on your phone. Connect up to four players.", "body");
             status = Text(right, "Preparing pairing…", "status");
             var actions = Box(right, "actions"); continueButton = Action(actions, "Continue", flow.ContinueFromPairing, true); Action(actions, "Back", flow.ShowTitle);
         }
         private void GameSelect(VisualElement parent)
         {
-            Text(parent, "CHOOSE YOUR SPORT", "heading");
+            Text(parent, "THE PLAY ROOM", "eyebrow");
+            Text(parent, "Choose your sport", "heading");
             catalog.Clear(); foreach (var game in flow.games) if (game != null) catalog.Add(game);
             gamePage = Mathf.Clamp(gamePage, 0, Mathf.Max(0, (catalog.Count - 1) / 4));
             deck = Box(parent, "game-deck");
@@ -181,7 +184,7 @@ namespace MotionControllers.UI
         }
         private void Results(VisualElement parent)
         {
-            var result = Box(parent, "panel result"); Text(result, "NICE PLAYING", "eyebrow");
+            var result = Box(parent, "panel result"); Text(result, "FINAL RESULTS", "eyebrow");
             Text(result, (flow.CurrentGame?.displayName ?? "Game") + " complete", "heading");
             Text(result, flow.Result.Summary, "result-stat"); Text(result, flow.Result.Detail, "body");
             Text(result, "Your controller is still paired. Ready for another round?", "body");
@@ -192,7 +195,7 @@ namespace MotionControllers.UI
         private void Pause()
         {
             var panel = Box(modal, "panel modal-panel");
-            Text(panel, flow.ConnectionBlocked ? "Controller interrupted" : "Take a breather", "heading");
+            Text(panel, flow.ConnectionBlocked ? "Controller interrupted" : "Paused", "heading");
             Text(panel, flow.ConnectionBlocked ? "Attempting to reconnect. Your player and calibration stay here while recovery runs. Return to Controllers if a new pairing is needed." : "Game paused. Your phone stays connected.", "body");
             var resume = Action(panel, "Resume", flow.Resume, true); resume.SetEnabled(!flow.ConnectionBlocked);
             Text(panel, flow.CurrentGame.instructions, "body");
@@ -212,9 +215,9 @@ namespace MotionControllers.UI
         private void Refresh()
         {
             var lobby = flow.Lobby; int connected = lobby?.ConnectedPlayers ?? 0;
-            connectionSummary.text = connected + (connected == 1 ? " controller connected" : " controllers connected");
+            connectionSummary.text = connected == 0 ? "Connect a phone to play" : connected + (connected == 1 ? " player connected" : " players connected");
             if (qr != null) qr.image = lobby?.PairingQr;
-            if (status != null) status.text = lobby?.Status ?? "Controller systems unavailable";
+            if (status != null) status.text = lobby == null ? "Controller system unavailable" : connected > 0 ? "Ready when you are." : lobby.PairingQr != null ? "Waiting for your first player…" : lobby.Status;
             if (againButton != null) againButton.SetEnabled(flow.CurrentGame != null && flow.CurrentGame.CanPlay(connected));
             if (continueButton != null) continueButton.SetEnabled(connected > 0);
             if (vitals != null && flow.GameSession is IGameVitals health) vitals.Refresh(health);
@@ -226,9 +229,10 @@ namespace MotionControllers.UI
             {
                 if (slot.PlayerNumber <= playerHealth.Count)
                 {
-                    var label = playerHealth[slot.PlayerNumber - 1]; label.text = (slot.Health == PlayerConnectionHealth.Connected ? "CONNECTED!" : slot.Health == PlayerConnectionHealth.Waiting ? "Join the fun" : slot.Health.ToString()) +
-                        (slot.Health == PlayerConnectionHealth.Connected && slot.RttMs >= 0 ? $" · {slot.RttMs:F0} ms" : "") +
-                        (string.IsNullOrEmpty(slot.NetworkPath) ? "" : "\n" + slot.NetworkPath);
+                    var label = playerHealth[slot.PlayerNumber - 1]; label.text = slot.Health == PlayerConnectionHealth.Connected ? "Ready" :
+                        slot.Health == PlayerConnectionHealth.Waiting ? "Scan to join" :
+                        slot.Health == PlayerConnectionHealth.Recovering ? "Reconnecting…" : "Disconnected";
+                    label.parent.EnableInClassList("player-ready", slot.Health == PlayerConnectionHealth.Connected);
                     label.EnableInClassList("connected", slot.Health == PlayerConnectionHealth.Connected);
                     label.EnableInClassList("recovering", slot.Health == PlayerConnectionHealth.Recovering);
                 }
