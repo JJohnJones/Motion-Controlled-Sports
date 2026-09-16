@@ -1,0 +1,16 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+  <ui:VisualElement name="shell" class="shell">
+    <ui:VisualElement name="environment" class="environment" picking-mode="Ignore">
+      <ui:VisualElement class="horizon" picking-mode="Ignore"/>
+      <ui:VisualElement name="bubble-a" class="bubble bubble-a" picking-mode="Ignore"/>
+      <ui:VisualElement name="bubble-b" class="bubble bubble-b" picking-mode="Ignore"/>
+      <ui:VisualElement class="light-sweep" picking-mode="Ignore"/>
+    </ui:VisualElement>
+    <ui:VisualElement class="app-header"><ui:Label text="MOTION SPORTS" class="brand"/><ui:Label name="connection-summary" class="connection-summary"/></ui:VisualElement>
+    <ui:VisualElement name="screen" class="screen"/>
+    <ui:Label name="connection-notice" class="connection-notice"/>
+    <ui:Label text="LOCAL PLAY   •   MAKE YOUR MOVE" class="app-footer"/>
+    <ui:VisualElement name="modal" class="modal-layer"/>
+    <ui:VisualElement name="fade" class="fade-layer" picking-mode="Ignore"/>
+  </ui:VisualElement>
+</ui:UXML>

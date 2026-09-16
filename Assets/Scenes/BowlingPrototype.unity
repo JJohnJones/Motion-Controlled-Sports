@@ -515,7 +515,7 @@ Rigidbody:
   serializedVersion: 5
   m_Mass: 1.5
   m_LinearDamping: 0
-  m_AngularDamping: 0.05
+  m_AngularDamping: 0.6
   m_CenterOfMass: {x: 0, y: 0.16, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -931,7 +931,7 @@ Rigidbody:
   serializedVersion: 5
   m_Mass: 1.5
   m_LinearDamping: 0
-  m_AngularDamping: 0.05
+  m_AngularDamping: 0.6
   m_CenterOfMass: {x: 0, y: 0.16, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -1120,7 +1120,7 @@ Rigidbody:
   serializedVersion: 5
   m_Mass: 1.5
   m_LinearDamping: 0
-  m_AngularDamping: 0.05
+  m_AngularDamping: 0.6
   m_CenterOfMass: {x: 0, y: 0.16, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -2004,7 +2004,7 @@ Rigidbody:
   serializedVersion: 5
   m_Mass: 1.5
   m_LinearDamping: 0
-  m_AngularDamping: 0.05
+  m_AngularDamping: 0.6
   m_CenterOfMass: {x: 0, y: 0.16, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -2463,7 +2463,7 @@ Rigidbody:
   serializedVersion: 5
   m_Mass: 1.5
   m_LinearDamping: 0
-  m_AngularDamping: 0.05
+  m_AngularDamping: 0.6
   m_CenterOfMass: {x: 0, y: 0.16, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -3005,7 +3005,7 @@ Rigidbody:
   serializedVersion: 5
   m_Mass: 1.5
   m_LinearDamping: 0
-  m_AngularDamping: 0.05
+  m_AngularDamping: 0.6
   m_CenterOfMass: {x: 0, y: 0.16, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -3379,7 +3379,7 @@ Rigidbody:
   serializedVersion: 5
   m_Mass: 1.5
   m_LinearDamping: 0
-  m_AngularDamping: 0.05
+  m_AngularDamping: 0.6
   m_CenterOfMass: {x: 0, y: 0.16, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -3568,7 +3568,7 @@ Rigidbody:
   serializedVersion: 5
   m_Mass: 1.5
   m_LinearDamping: 0
-  m_AngularDamping: 0.05
+  m_AngularDamping: 0.6
   m_CenterOfMass: {x: 0, y: 0.16, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -3810,7 +3810,6 @@ MonoBehaviour:
   visualizer: {fileID: 0}
   gameDebugSource: {fileID: 1454620399}
   pwaUrl: https://jjohnjones.github.io/Motion-Controller-Website/
-  publicWssUrl: wss://block-suppose-ict-corn.trycloudflare.com/controller
   uiScale: 1
   controllerSystem: {fileID: 2017496555}
 --- !u!4 &2007221981
@@ -3838,7 +3837,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2017496556}
   - component: {fileID: 2017496555}
-  - component: {fileID: 2017496554}
   - component: {fileID: 2017496557}
   - component: {fileID: 2017496558}
   m_Layer: 0
@@ -3848,20 +3846,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &2017496554
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2017496551}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa6e21153c5d4a20ad2a2d7e996bcf3a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: MotionControllers::MotionControllers.ControllerReceiver
-  port: 8080
-  allowedOrigin: https://jjohnjones.github.io
 --- !u!114 &2017496555
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4061,7 +4045,7 @@ Rigidbody:
   serializedVersion: 5
   m_Mass: 1.5
   m_LinearDamping: 0
-  m_AngularDamping: 0.05
+  m_AngularDamping: 0.6
   m_CenterOfMass: {x: 0, y: 0.16, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -4390,7 +4374,7 @@ Rigidbody:
   serializedVersion: 5
   m_Mass: 1.5
   m_LinearDamping: 0
-  m_AngularDamping: 0.05
+  m_AngularDamping: 0.6
   m_CenterOfMass: {x: 0, y: 0.16, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}

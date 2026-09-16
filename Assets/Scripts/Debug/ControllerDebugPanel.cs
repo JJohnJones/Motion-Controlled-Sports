@@ -7,14 +7,11 @@ namespace MotionControllers
         public PhoneOrientationVisualizer visualizer;
         [Tooltip("Optional game component implementing IControllerGameDebug.")]
         public MonoBehaviour gameDebugSource;
-        public string pwaUrl = "https://jjohnj.github.io/Motion-Controller-Website/";
-        public string publicWssUrl = "wss://YOUR-TUNNEL.trycloudflare.com/controller";
         [Tooltip("Additional size adjustment on top of automatic Game view scaling.")]
         [Range(0.75f, 2f)] public float uiScale = 1f;
-        private ControllerReceiver receiver;
         private ControllerManager manager;
         private WebRtcLanControllerTransport lan;
-        private bool showLegacy;
+        private bool showNetworkDiagnostics;
         [Tooltip("Leave empty to use the persistent controller system.")]
         public ControllerManager controllerSystem;
         private GUISkin panelSkin;
@@ -24,7 +21,6 @@ namespace MotionControllers
             manager = PersistentControllerRoot.Instance != null ? PersistentControllerRoot.Instance.Manager :
                 controllerSystem != null ? controllerSystem : GetComponent<ControllerManager>();
             if (manager == null) { enabled = false; return; }
-            receiver = manager.GetComponent<ControllerReceiver>();
             lan = manager.GetComponent<WebRtcLanControllerTransport>();
         }
         private void OnGUI()
@@ -98,20 +94,18 @@ namespace MotionControllers
                 if (lan.Protocol != null) foreach (var c in lan.Protocol.Connections.Values)
                 {
                     if (c.ControllerId == null) continue;
-                    GUILayout.Label($"Player {c.PlayerNumber} Connected · RTT {(c.RttMs < 0 ? "—" : c.RttMs.ToString("F0") + " ms")}");
+                    GUILayout.Label($"Player {c.PlayerNumber} Paired · RTT {(c.RttMs < 0 ? "—" : c.RttMs.ToString("F0") + " ms")}");
                 }
                 GUILayout.Label("Rejected packets: " + (lan.Protocol?.InvalidPackets ?? 0));
-                showLegacy = GUILayout.Toggle(showLegacy, "Show legacy WebSocket diagnostics");
-            }
-            if (receiver != null && (lan == null || !lan.enabled || showLegacy))
-            {
-                GUILayout.Label(receiver.Status + " | Invalid/rejected: " + receiver.InvalidPackets);
-                GUILayout.Label("Pairing token (new each Play)");
-                GUILayout.TextField(receiver.PairingToken ?? "");
-                GUILayout.Label("Public WSS endpoint from your tunnel");
-                publicWssUrl = GUILayout.TextField(publicWssUrl);
-                if (GUILayout.Button("Copy pairing link"))
-                    GUIUtility.systemCopyBuffer = pwaUrl + "#server=" + System.Uri.EscapeDataString(publicWssUrl) + "&token=" + receiver.PairingToken;
+                GUILayout.Label("Signaling: " + lan.SignalingStatus);
+                showNetworkDiagnostics = GUILayout.Toggle(showNetworkDiagnostics, "Show connection recovery diagnostics");
+                if (showNetworkDiagnostics && (Application.isEditor || UnityEngine.Debug.isDebugBuild))
+                {
+                    if (GUILayout.Button("Test ICE restart (keep player)")) lan.RestartIceForControllers();
+                    if (GUILayout.Button("Test signaling reconnect (keep channel)")) lan.ReconnectSignalingForDiagnostics();
+                    foreach (var line in lan.PeerDiagnostics) GUILayout.Label(line);
+                    foreach (var line in lan.RecentLog) GUILayout.Label(line);
+                }
             }
             if (visualizer != null) visualizer.useSmoothing = GUILayout.Toggle(visualizer.useSmoothing, "Use light smoothing (uncheck for raw)");
             GUILayout.Label("Smoothing: " + manager.smoothingSeconds.ToString("F3") + " s (Inspector configurable)");

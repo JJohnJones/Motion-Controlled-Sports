@@ -22,7 +22,7 @@ namespace MotionControllers.Editor
             if (system.transform.parent != null || system.transform.childCount != 0)
             { Debug.LogWarning("Controller System must be a top-level object without children. Move game/visual objects outside it first."); return false; }
             foreach (var component in system.GetComponents<Component>())
-                if (!(component is Transform || component is ControllerManager || component is ControllerReceiver ||
+                if (!(component is Transform || component is ControllerManager ||
                     component is WebRtcLanControllerTransport || component is PersistentControllerRoot ||
                     component is ControllerDebugPanel || component is BowlingThrowController))
                 { Debug.LogWarning("Move non-controller component " + component?.GetType().Name + " to a scene-local object before migration."); return false; }

@@ -24,6 +24,15 @@ namespace MotionControllers
         public int GetPlayerNumber(string id) => playerNumbers.TryGetValue(id, out int number) ? number : 0;
         public void Remove(string id) { sessions.Remove(id); playerNumbers.Remove(id); }
         public void Clear() { sessions.Clear(); playerNumbers.Clear(); }
+        public void CancelHeldInput(string id)
+        {
+            if (!sessions.TryGetValue(id, out var session) || !session.PrimaryHeld) return;
+            session.CancelHeldInput();
+            // Local cancellation is not a fabricated phone sequence or a release/throw.
+            ButtonChanged?.Invoke(new ControllerButtonEvent { ControllerId = id, Button = ControllerButton.Primary,
+                Phase = ButtonPhase.Canceled, Sequence = session.LastButtonSequence,
+                TimestampMs = session.LastButtonTimestampMs, ReceivedAtSeconds = Time.realtimeSinceStartupAsDouble });
+        }
         public bool Submit(MotionFrame frame, bool calibrate = false) =>
             sessions.TryGetValue(frame.ControllerId, out var session) && session.Accept(frame, calibrate);
         public bool SubmitButton(ControllerButtonEvent input)

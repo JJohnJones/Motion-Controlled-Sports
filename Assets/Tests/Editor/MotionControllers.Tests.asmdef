@@ -1,6 +1,14 @@
 {
   "name": "MotionControllers.Tests",
-  "references": ["MotionControllers", "MotionControllers.Editor"],
-  "includePlatforms": ["Editor"],
-  "optionalUnityReferences": ["TestAssemblies"]
+  "references": [
+    "MotionControllers",
+    "MotionControllers.Editor",
+    "Unity.WebRTC"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
 }

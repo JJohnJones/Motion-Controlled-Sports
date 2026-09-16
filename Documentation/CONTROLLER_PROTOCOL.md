@@ -5,18 +5,17 @@ Companion: `JJohnJones/Motion-Controller-Website` (separate source delivery).
 
 ## Boundaries
 
-`LoopbackWebSocketHost` deals only with connections and UTF-8 text. It has no Unity dependencies.
-`ControllerReceiver` authenticates peers, deserializes on the Unity main thread, binds the assigned ID to the connection, and passes converted `MotionFrame` values to `ControllerManager`.
+`WebRtcLanControllerTransport` handles DataChannel delivery; `ControllerProtocolRouter` authenticates peers, deserializes on the Unity main thread, binds IDs to connections, and passes converted `MotionFrame` values to `ControllerManager`.
 `ControllerSession` holds latest input, calibration, raw/filtered rotation, counters and a 120-frame ring buffer. The visualizer reads `IMotionInputSource` and never sees sockets or JSON.
 Native clients or a WebRTC receiver can submit the same converted frame. A binary codec can replace JSON without changing gameplay input consumers.
 
 ## Connection and messages
 
-The only endpoint is `/controller`. Accept exactly the configured browser Origin and a valid WebSocket version 13 upgrade. The local server binds `127.0.0.1:8080`; TLS is terminated at the development tunnel. The browser connects using **WSS**. No token appears in the WebSocket URL.
+The ordered reliable `controller-v1` DataChannel carries this protocol. Public WSS `/signal` carries only pairing/SDP/ICE and expiring ICE configuration. Direct and TURN-relayed connections use identical input packets.
 
 1. Phone sends `{"version":1,"type":"hello","token":"32-hex-character-token"}` within five seconds.
 2. Unity replies `{"version":1,"type":"welcome","controllerId":"server-assigned-32-hex-id",...}`.
-3. Every later client message includes `controllerId` and `version:1`. An ID is valid only for that connection. A new connection gets a new ID and must recalibrate. Up to four authenticated controllers are supported (eight connections including pending authentication).
+3. Every later client message includes `controllerId` and `version:1`. An ID is valid only for that connection. Recovery/recreated channels authenticate with the retained ticket and preserve the same ID/calibration. A newly joined phone receives a new ID. Up to four controllers are supported.
 4. `motion` and `calibrate` share one strictly increasing sequence counter starting at 1. A calibration is a **complete sensor snapshot** from the button press, with its own sequence. Unity accepts that snapshot and records its converted orientation as neutral; it returns `type:"calibrated"` and the accepted sequence. Motion timestamps may be equal for reused snapshots but cannot regress.
 5. `{"version":1,"type":"ping","controllerId":"…","timestamp":1234.5}` returns `type:"pong"` with the echoed timestamp. The phone measures RTT entirely on its own clock; Unity main-thread scheduling is included. This is not one-way latency.
 
@@ -67,22 +66,12 @@ This expresses movement in the screen axes at calibration time. Hold the phone u
 
 ## Freshness, performance, lifetime
 
-Phone sends at most 60 fresh orientation samples/second (browser/timer cadence may be lower), with no duplicate-orientation timer stream. It skips sends when the socket buffer exceeds 8 KiB instead of building a sensor queue. JSON is intentionally readable. Unity caps messages below 8192 bytes, incoming queue around 256 events, outgoing queue 16 messages per connection, handshakes five seconds, and authenticated inactivity fifteen seconds. Malformed, spoofed, oversized and overloaded peers are disconnected. Sequence gaps include locally skipped messages; TCP itself is reliable and ordered.
+Phone sends at most 60 fresh samples/second, skipping when the DataChannel buffer exceeds 8 KiB. Reliable ordering is retained; sequence gaps include locally skipped frames, not measured UDP packet loss. The PC reports arrival age rather than comparing unsynchronized clocks. Smoothing remains configurable (default 25 ms).
 
-The PC shows time since last packet **arrival**, not sensor age or one-way network delay. The cube holds after 500 ms without a new frame. On hidden phone pages, the PWA disconnects immediately; on return, Connect and Calibrate again. RTT timeout is ten seconds. Disconnection removes that controller's state/history and frees its slot. A stop/restart generates a fresh random 128-bit session pairing token.
+Hidden pages cancel held input while retaining pairing. Transient disconnection has an eight-second grace, heartbeat gaps are detected after twelve seconds, and recovery has a sixty-second budget. Only terminal failure removes identity/history. See CONTROLLER_RECOVERY.md. `serverPing`/`serverPong` measures application RTT entirely on the host clock; selected-candidate ICE RTT is separate and neither alters motion timestamps.
 
-Optional quaternion Slerp smoothing uses `weight = 1-exp(-dt/tau)`; default tau 25 ms. Raw and smoothed orientations are both available; set tau to zero or uncheck the debug toggle. Calibration resets both. No Kalman filter, position integration, gesture detection or sports logic is present.
+## Networking boundary
 
-## Production direction
+Cloudflare TURN is a fallback ICE path, configured with temporary credentials from authenticated signaling. The DataChannel remains encrypted and feeds the same router/input abstractions. Future multiplayer should replicate locally interpreted game actions/state. See ../LAN_CONTROLLER_MODE.md for setup and the separate signaling repository's TURN_SETUP.md for credential security and testing.
 
-The tunnel is development infrastructure, exposes only this token-authenticated endpoint, and relays motion via a third party. Keep the token/pairing link private; stop the tunnel when done. It needs working internet, has no LAN-latency guarantee, and is not a production pairing service. Do not weaken TLS checks or expose this loopback HTTP endpoint directly.
-
-A production path can retain the PWA and motion layer, introduce HTTPS room/QR pairing with expiring per-player credentials, and use a Unity-supported WebRTC package for encrypted data channels. Evaluate unordered, non-retransmitted motion messages and reliable calibration/control messages; handle their ordering explicitly (e.g. calibration generations). ICE can select direct LAN connectivity; STUN/TURN supports other networks, with relay fallback. Measure actual hardware latency before choosing. Trusted LAN WSS through a managed TLS reverse proxy is another deployment option when certificate/DNS setup is controlled.
-
-References:
-- [W3C device orientation and motion axes, angles and units](https://www.w3.org/TR/orientation-event/)
-- [W3C screen orientation angle convention](https://www.w3.org/TR/screen-orientation/)
-- [HTTPS/WebSocket mixed-content guidance](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_client_applications)
-- [iOS-style permission request and transient user activation](https://developer.mozilla.org/en-US/docs/Web/API/DeviceMotionEvent/requestPermission_static)
-- [WebRTC signaling and ICE infrastructure](https://webrtc.org/getting-started/peer-connections?hl=en)
-- [Cloudflare development tunnel setup](https://developers.cloudflare.com/tunnel/setup/)
+References: [device orientation](https://www.w3.org/TR/orientation-event/), [screen orientation](https://www.w3.org/TR/screen-orientation/).

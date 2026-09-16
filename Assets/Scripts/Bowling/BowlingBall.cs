@@ -11,11 +11,20 @@ namespace MotionControllers.Bowling
         public Rigidbody Body { get; private set; }
         private float spin, hookAcceleration;
         private void Awake() { Body = GetComponent<Rigidbody>(); }
+        public bool OutOfPlay { get; private set; }
+        public void RemoveFromPlay()
+        {
+            if (OutOfPlay) return;
+            OutOfPlay = true;
+            Body.linearVelocity = Vector3.zero; Body.angularVelocity = Vector3.zero;
+            Body.isKinematic = true; gameObject.SetActive(false);
+        }
         public void ResetBall()
         {
             if (Body == null) Body = GetComponent<Rigidbody>();
             if (!Body.isKinematic) { Body.linearVelocity = Vector3.zero; Body.angularVelocity = Vector3.zero; }
             Body.isKinematic = true;
+            OutOfPlay = false; gameObject.SetActive(true);
             spin = hookAcceleration = 0;
             Body.position = releasePoint.position;
             Body.rotation = releasePoint.rotation;

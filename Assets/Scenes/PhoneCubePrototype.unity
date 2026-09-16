@@ -702,7 +702,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1903203554}
   - component: {fileID: 1903203551}
-  - component: {fileID: 1903203553}
   - component: {fileID: 1903203552}
   m_Layer: 0
   m_Name: Controller System
@@ -739,22 +738,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MotionControllers::MotionControllers.ControllerDebugPanel
   visualizer: {fileID: 1540360235}
   pwaUrl: https://jjohnjones.github.io/Motion-Controller-Website/
-  publicWssUrl: wss://securities-editor-buffer-opponents.trycloudflare.com/controller
   uiScale: 1
---- !u!114 &1903203553
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1903203550}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa6e21153c5d4a20ad2a2d7e996bcf3a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: MotionControllers::MotionControllers.ControllerReceiver
-  port: 8080
-  allowedOrigin: https://jjohnjones.github.io/
 --- !u!4 &1903203554
 Transform:
   m_ObjectHideFlags: 0

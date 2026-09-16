@@ -1,14 +1,16 @@
-# Hold / swing / release bowling prototype
+# Bowling setup
 
-The existing HTTPS/WSS phone connection and calibration are reused. This adds one playable lane, a Rigidbody ball, ten pins, locked alpha aiming, forward-release validation, wrist-controlled hook, and automatic resets. No scoring, multiplayer gameplay, menus, sound or character animation is included.
+For the complete 1–4 player ten-frame game, follow [BOWLING_MATCH.md](BOWLING_MATCH.md) and launch Bootstrap. The tuning and standalone input-prototype notes below remain useful for development.
+
+The existing QR/WebRTC phone connection and calibration are reused. This adds one playable lane, a Rigidbody ball, ten pins, locked alpha aiming, forward-release validation, wrist-controlled hook, and automatic resets. No scoring, multiplayer gameplay, menus, sound or character animation is included.
 
 ## Start here
 
 1. In Unity 6000.6.0f1, open `Assets/Scenes/BowlingPrototype.unity` if present. Alternatively choose **Tools → Motion Controllers → Create Bowling Prototype Scene**. The command creates a new scene and a unique `Assets/BowlingGenerated` asset folder; it does not overwrite the cube scene or previous bowling scenes. Save the current scene if asked. No downloaded models are needed.
-2. Select **Controller System**. Its components are `ControllerManager`, `ControllerReceiver`, `ControllerDebugPanel`, and `BowlingThrowController`. The generator connects all object references. Keep the working receiver port and Allowed Origin values from your cube setup; the new scene defaults to `8080` and `https://jjohnj.github.io`. Copy any custom host settings into this scene.
+2. Configure the persistent WebRtcLanControllerTransport with the existing HTTPS PWA and public WSS signaling URLs. See ../LAN_CONTROLLER_MODE.md; no local receiver port or browser-origin Inspector field remains.
 3. The **Bowling Ball** has a Rigidbody, sphere collider, `BowlingBall`, and a release-point reference. **Ten Pin Rack** contains ten Rigidbody pins with compound foot/body/head colliders. The lane runs along world +Z, has a 2.4 m-wide surface, lowered gutter floors and outer walls. The pins use a shared procedural mesh with red neck bands. These are prototype proportions, not a regulation equipment simulation.
-4. Publish the changes in the separate **Motion Controller Website** repository to your existing HTTPS host. New file: `hold-button.js`. Modified: `controller.js`, `index.html`, `styles.css`, `service-worker.js`, tests, package version and README. Deploy all of them together. The worker cache is now `motion-controller-shell-v3-bowling-axes`; close old tabs/installed app instances and reload. The new sensor packets include the original alpha/beta/gamma angles. Update Unity before using the new button; an old receiver rejects unknown button messages.
-5. Press Play, start the same working tunnel, enter the WSS endpoint and new Play-session token, connect and Enable Motion. Use only one game scene/receiver at a time on port 8080.
+4. Publish the changes in the separate **Motion Controller Website** repository to your existing HTTPS host. New file: `hold-button.js`. Modified: `controller.js`, `index.html`, `styles.css`, `service-worker.js`, tests, package version and README. Deploy all of them together. The worker cache is now `motion-controller-shell-v6-turn`; close old tabs/installed app instances and reload. The new sensor packets include the original alpha/beta/gamma angles. Update Unity before using the new button; an old receiver rejects unknown button messages.
+5. Press Play, scan the QR, connect and Enable Motion. Keep only one persistent controller root active.
 6. Hold your phone like a Wii controller: approximately horizontal, screen facing up, with its top edge pointing down the lane. Calibrate in that grip. Forward acceleration is measured toward that calibrated top-edge direction, compensating for the phone's current rotation. Keep screen orientation locked during throws, or recalibrate after a portrait/landscape change. The cube scene continues to work with the updated PWA.
 7. Watch the lane's green **Aim Indicator**. Turn the calibrated phone gently left/right to establish aim. The prototype uses the original **alpha** angle relative to calibration (wrapped across 0/360°), scaled and clamped. Positive alpha means counter-clockwise/left with the phone screen up. Gamma does not affect aim.
 8. When Unity shows **Ready**, press and hold **HOLD BALL**. The button changes immediately, Unity shows **Holding**, and aim locks. Keep a secure grip on the phone itself throughout the swing.
@@ -65,9 +67,9 @@ Check the following with the deployed PWA and your physical phone:
 6. Press/release during Rolling: no second launch. Wait for Ready and make a fresh press.
 7. While holding, slide off the button and lift: pointer capture should still produce one release. Add another finger: that finger must not release the first hold.
 8. Background the page, interrupt the touch or rotate the screen while holding: no throw. Reconnect/recalibrate as needed.
-9. Stop the tunnel while holding: the ball stays unlaunched and the hold cancels. Reconnect and verify the next new press/release works.
+9. Interrupt Wi-Fi while holding: the ball stays unlaunched and the hold cancels. Reconnect and verify the next new press/release works.
 10. Keep alpha aim fixed and compare gamma near zero, positive, and negative at release. Neutral should go straight; opposite wrist rolls should curve in opposite directions. Gamma changes must not move the aiming line in Ready.
 
-If the ball will not launch, check the Unity rejection message, calibrated/fresh input, gyro availability, and current state. If throws feel too weak, increase sensitivity moderately or reduce the maximum swing-speed mapping. If aiming is twitchy, reduce aim sensitivity. Persistent network latency still comes from the existing tunnel path; changing swing sensitivity will not remove it.
+If the ball will not launch, check the Unity rejection message, calibrated/fresh input, gyro availability, and current state. If throws feel too weak, increase sensitivity moderately or reduce the maximum swing-speed mapping. If aiming is twitchy, reduce aim sensitivity. Check direct/relay status and RTT for network latency; swing sensitivity cannot remove it.
 
 Automated coverage is described in `BOWLING_VALIDATION.md`. Physical iPhone/Android touch behavior and throw feel still require this manual acceptance pass.

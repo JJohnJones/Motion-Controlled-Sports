@@ -27,7 +27,7 @@ namespace MotionControllers
             bool systemsOnly = true;
             foreach (var component in GetComponents<Component>())
                 if (!(component is Transform || component is PersistentControllerRoot || component is ControllerManager ||
-                    component is ControllerReceiver || component is WebRtcLanControllerTransport)) systemsOnly = false;
+                     component is WebRtcLanControllerTransport)) systemsOnly = false;
             if (transform.parent != null || transform.childCount != 0 || !systemsOnly)
             {
                 Debug.LogError("Persistent controller root must contain only controller systems. Run Tools > Motion Controllers > Make Selected Controller System Persistent before Play.", this);

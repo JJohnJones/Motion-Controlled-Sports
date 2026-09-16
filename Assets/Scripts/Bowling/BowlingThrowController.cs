@@ -28,7 +28,33 @@ namespace MotionControllers.Bowling
         private double heldSince, stateSince;
         private int calibrationRevision;
         private float stoppedSeconds;
-        private bool initialized;
+        private bool initialized, paused, matchManaged, turnInputEnabled = true;
+        private double pauseStarted;
+        private string assignedControllerId;
+        public void AssignController(string id) {
+            if (State == BowlingState.Holding && id != ActiveControllerId) CancelHold("Turn changed.");
+            assignedControllerId = ActiveControllerId = id;
+        }
+        public void ManageMatch() { matchManaged = true; turnInputEnabled = false; }
+        public void LockTurn() { turnInputEnabled = false; if (State == BowlingState.Holding) CancelHold("Wait for your turn."); }
+        public void PrepareTurn(string id)
+        {
+            Initialize(); AssignController(id); ball.ResetBall(); State = BowlingState.Ready;
+            AimDegrees = 0; ButtonState = "Not pressed"; turnInputEnabled = true;
+            Message = "Your turn. Aim, hold, swing, and release.";
+        }
+        public event System.Action<BowlingRelease> ThrowLaunched;
+        public void SetPaused(bool value)
+        {
+            if (paused == value) return;
+            paused = value;
+            if (paused)
+            {
+                pauseStarted = Time.realtimeSinceStartupAsDouble;
+                if (State == BowlingState.Holding) CancelHold("Hold canceled while paused. Start a new hold after resuming.");
+            }
+            else stateSince += Time.realtimeSinceStartupAsDouble - pauseStarted;
+        }
 
         private void Start() { Initialize(); }
         private void OnEnable() { if (initialized) Subscribe(); }
@@ -62,8 +88,9 @@ namespace MotionControllers.Bowling
         }
         public void HandleButton(ControllerButtonEvent input)
         {
-            if (source == null || input.Button != ControllerButton.Primary) return;
+            if (paused || !turnInputEnabled || source == null || input.Button != ControllerButton.Primary) return;
             if (State == BowlingState.Rolling || State == BowlingState.Resetting) return;
+            if (assignedControllerId != null && assignedControllerId != input.ControllerId) return;
             if (ActiveControllerId != null && ActiveControllerId != input.ControllerId) return;
             if (!source.TryGetController(input.ControllerId, out var session)) return;
             ActiveControllerId = input.ControllerId;
@@ -88,6 +115,7 @@ namespace MotionControllers.Bowling
                 ball.Launch(direction.normalized * LastRelease.BallSpeed, LastRelease.Spin, release.hookAcceleration);
                 State = BowlingState.Rolling; stateSince = Time.realtimeSinceStartupAsDouble; stoppedSeconds = 0;
                 Message = "Ball rolling. Wait for reset.";
+                ThrowLaunched?.Invoke(LastRelease);
             }
         }
         private void CancelHold(string reason)
@@ -97,7 +125,7 @@ namespace MotionControllers.Bowling
         }
         private void Update()
         {
-            if (source == null || ball == null || pinRack == null) return;
+            if (paused || source == null || ball == null || pinRack == null) return;
             ControllerSession session = null;
             if (ActiveControllerId != null && !source.TryGetController(ActiveControllerId, out session))
             {
@@ -106,7 +134,7 @@ namespace MotionControllers.Bowling
             }
             if (ActiveControllerId == null)
                 foreach (var candidate in source.Sessions.Values)
-                    if (Fresh(candidate)) { session = candidate; ActiveControllerId = candidate.Id; break; }
+                    if ((assignedControllerId == null || candidate.Id == assignedControllerId) && Fresh(candidate)) { session = candidate; ActiveControllerId = candidate.Id; break; }
             if (session != null)
             {
                 CurrentAngularSpeed = session.Latest.HasAngularVelocity ? session.Latest.AngularVelocity.magnitude : 0;
@@ -119,7 +147,7 @@ namespace MotionControllers.Bowling
                 }
             }
             double now = Time.realtimeSinceStartupAsDouble;
-            if (State == BowlingState.Rolling)
+            if (!matchManaged && State == BowlingState.Rolling)
             {
                 Vector3 p = ball.Body.position;
                 stoppedSeconds = ball.Body.linearVelocity.sqrMagnitude < 0.04f ? stoppedSeconds + Time.unscaledDeltaTime : 0;
@@ -127,14 +155,14 @@ namespace MotionControllers.Bowling
                 if (outside || now - stateSince > maximumRollSeconds || (now - stateSince > 2 && stoppedSeconds > 1))
                 { State = BowlingState.Resetting; stateSince = now; Message = "Resetting ball and pins…"; }
             }
-            else if (State == BowlingState.Resetting && now - stateSince >= resetDelaySeconds)
+            else if (!matchManaged && State == BowlingState.Resetting && now - stateSince >= resetDelaySeconds)
             {
                 ball.ResetBall(); pinRack.ResetPins(); State = BowlingState.Ready;
                 Message = "Ready. Aim, press and hold, swing, then release.";
             }
             if (aimIndicator != null)
             {
-                aimIndicator.enabled = State == BowlingState.Ready || State == BowlingState.Holding;
+                aimIndicator.enabled = turnInputEnabled && (State == BowlingState.Ready || State == BowlingState.Holding);
                 Vector3 origin = ball.releasePoint.position; origin.y = 0.025f;
                 Vector3 direction = Quaternion.AngleAxis(AimDegrees, Vector3.up) * ball.releasePoint.forward;
                 aimIndicator.SetPosition(0, origin); aimIndicator.SetPosition(1, origin + direction * 16);

@@ -62,6 +62,25 @@ namespace MotionControllers.Tests
                 Assert.That(originalSession.Latest.Sequence, Is.GreaterThan(sequence));
                 Assert.That(originalSession.IsCalibrated, Is.True);
                 yield return SceneManager.UnloadSceneAsync(nextScene);
+                lan.ReconnectSignalingForDiagnostics();
+                yield return new WaitForSecondsRealtime(4);
+                Assert.That(lan.JoinUrl, Is.EqualTo(originalUrl));
+                Assert.That(manager.Sessions[originalSession.Id], Is.SameAs(originalSession));
+                lan.RestartIceForControllers();
+                yield return new WaitForSecondsRealtime(1);
+                double recoveryDeadline = Time.realtimeSinceStartupAsDouble + 30;
+                while (lan.State != ControllerConnectionState.Connected && Time.realtimeSinceStartupAsDouble < recoveryDeadline) yield return null;
+                Assert.That(lan.State, Is.EqualTo(ControllerConnectionState.Connected), lan.Status);
+                Assert.That(manager.Sessions[originalSession.Id], Is.SameAs(originalSession));
+                Assert.That(originalSession.IsCalibrated, Is.True);
+                File.WriteAllText(Path.Combine(directory, "host-recovery.txt"), "ready for browser recovery tests");
+                while (!File.Exists(Path.Combine(directory, "browser-recovery.txt")) && Time.realtimeSinceStartupAsDouble < recoveryDeadline + 30) yield return null;
+                Assert.That(File.Exists(Path.Combine(directory, "browser-recovery.txt")), Is.True, "Browser recovery tests did not complete");
+                yield return new WaitForSecondsRealtime(3);
+                Assert.That(manager.Sessions[originalSession.Id], Is.SameAs(originalSession));
+                Assert.That(originalSession.IsCalibrated, Is.True);
+                Assert.That(lan.JoinUrl, Is.EqualTo(originalUrl));
+                Assert.That(lan.State, Is.EqualTo(ControllerConnectionState.Connected));
                 File.WriteAllText(Path.Combine(directory, "unity-result.txt"), "PASS: browser WebRTC calibration, motion, release snapshot, RTT");
                 // Give the browser time to collect the selected ICE pair before disposal.
                 yield return new WaitForSecondsRealtime(2);

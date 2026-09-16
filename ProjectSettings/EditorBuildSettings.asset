@@ -6,8 +6,20 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/Bootstrap.unity
+    guid: 5112cd8fff09491429d24e02003c0556
+  - enabled: 1
+    path: Assets/Scenes/Games/Bowling.unity
+    guid: 8c934e0057fc3e84c863677cdd145843
+  - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Scenes/Games/Tennis.unity
+    guid: 36a4321c5409c4b4796c7d626fb8f6fc
+  - enabled: 1
+    path: Assets/Scenes/Games/SwordDuel.unity
+    guid: 16535cb3d49502344add35301fdc2d09
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

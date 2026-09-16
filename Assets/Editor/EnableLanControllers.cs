@@ -17,11 +17,9 @@ namespace MotionControllers.Editor
             var lan = selected.GetComponent<WebRtcLanControllerTransport>();
             if (lan == null) lan = Undo.AddComponent<WebRtcLanControllerTransport>(selected);
             Undo.RecordObject(lan, "Enable LAN controllers"); lan.enabled = true;
-            var old = selected.GetComponent<ControllerReceiver>();
-            if (old != null) { Undo.RecordObject(old, "Disable fallback listener"); old.enabled = false; }
             EditorSceneManager.MarkSceneDirty(selected.scene);
             Selection.activeObject = lan;
-            Debug.Log("LAN transport added. Set Signaling URL and PWA URL in the Inspector, then save the scene. Legacy receiver is preserved but disabled.");
+            Debug.Log("LAN transport added. Set Signaling URL and PWA URL in the Inspector, then save the scene.");
         }
     }
 }

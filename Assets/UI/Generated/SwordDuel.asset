@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e6b476f486b7b84896882241592561a, type: 3}
+  m_Name: SwordDuel
+  m_EditorClassIdentifier: MotionControllers::MotionControllers.Core.GameDefinition
+  displayName: Sword Duel
+  description: Read the strike. Raise your guard. Time the parry.
+  instructions: Hold the phone in your comfortable sword-ready pose and tap before each round. Deliberate swings attack. Hold your blade across incoming slashes to block; move into that guard just before impact to parry. Recover to a quiet stance between attacks.
+  scenePath: Assets/Scenes/Games/SwordDuel.unity
+  icon: {fileID: 0}
+  accent: {r: 0.7, g: 0.9, b: 1, a: 1}
+  minimumPlayers: 1
+  maximumPlayers: 2
+  available: 1
+  controllerUiMode: sword

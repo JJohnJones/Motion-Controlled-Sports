@@ -48,11 +48,70 @@ namespace MotionControllers.Tests
                     router.Handle("p", "{\"version\":1,\"type\":\"hello\",\"token\":\"secret\"}", 0);
                     string id = router.Connections["p"].ControllerId;
                     router.Tick(1);
-                    Assert.That(wire.Sent[1], Does.Contain("serverPing"));
+                    Assert.That(wire.Sent[wire.Sent.Count - 1], Does.Contain("serverPing"));
                     router.Handle("p", "{\"version\":1,\"type\":\"serverPong\",\"controllerId\":\"" + id + "\",\"timestamp\":1}", 1.04);
                     Assert.That(router.Connections["p"].RttMs, Is.EqualTo(40).Within(.001));
                     router.Tick(3); router.Tick(14);
                     Assert.That(router.Connections.Count, Is.Zero);
+                }
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+        [Test] public void LanHeartbeatRetriesAndReplacementChannelKeepsCalibratedPlayer()
+        {
+            var go = new GameObject("LAN recovery router");
+            try
+            {
+                var manager = go.AddComponent<ControllerManager>(); var wire = new Transport();
+                using (var router = new ControllerProtocolRouter(manager, wire, true, false))
+                {
+                    const string hello = "{\"version\":1,\"type\":\"hello\",\"token\":\"secret\"}";
+                    router.Open("p", "secret", 0); router.Handle("p", hello, 0);
+                    var c = router.Connections["p"]; var session = manager.Sessions[c.ControllerId];
+                    router.Tick(1); router.Tick(3); router.Tick(13);
+                    Assert.That(wire.Closed, Is.Empty, "Missed heartbeats must not delete a LAN controller");
+                    Assert.That(wire.Sent.FindAll(message => message.Contains("serverPing")).Count, Is.EqualTo(3));
+                    router.Handle("p", "{\"version\":1,\"type\":\"serverPong\",\"controllerId\":\"" + c.ControllerId + "\",\"timestamp\":3}", 13.1);
+                    Assert.That(c.LastPongAt, Is.EqualTo(13.1));
+                    router.PauseInput("p", true); router.Open("p", "secret", 14); router.Handle("p", hello, 14);
+                    Assert.That(router.Connections["p"], Is.SameAs(c));
+                    Assert.That(manager.Sessions[c.ControllerId], Is.SameAs(session));
+                    Assert.That(c.PlayerNumber, Is.EqualTo(1)); Assert.That(c.Authenticated, Is.True);
+                    router.Handle("p", "{\"version\":1,\"type\":\"serverPong\",\"controllerId\":\"" + c.ControllerId + "\",\"timestamp\":1}", 14.1);
+                    Assert.That(c.LastPongAt, Is.EqualTo(13.1), "Old pong must not replace newer diagnostics");
+                    Assert.That(router.InvalidPackets, Is.Zero);
+                }
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+        [Test] public void UiModeIsReplayedOnJoinAndRecoveryWithoutChangingIdentity()
+        {
+            var go = new GameObject("UI mode router");
+            try
+            {
+                var wire = new Transport();
+                using (var router = new ControllerProtocolRouter(go.AddComponent<ControllerManager>(), wire, true, false))
+                {
+                    router.SetUiMode("bowling", false);
+                    Assert.That(wire.Sent, Is.Empty);
+                    const string hello = "{\"version\":1,\"type\":\"hello\",\"token\":\"secret\"}";
+                    router.Open("p", "secret", 0); router.Handle("p", hello, 0);
+                    string id = router.Connections["p"].ControllerId;
+                    Assert.That(wire.Sent[wire.Sent.Count - 1], Does.Contain("bowling"));
+                    int count = wire.Sent.Count; router.SetUiMode("bowling", false);
+                    Assert.That(wire.Sent.Count, Is.EqualTo(count), "Unchanged modes are not streamed");
+                    router.SetControllerUiState("p", "serve");
+                    Assert.That(wire.Sent[wire.Sent.Count - 1], Does.Contain("serve"));
+                    router.PauseInput("p", true); router.PauseInput("p", false);
+                    Assert.That(wire.Sent[wire.Sent.Count - 1], Does.Contain("serve"), "Recovery replays per-controller presentation");
+                    router.SetUiMode("bowling", true);
+                    Assert.That(wire.Sent[wire.Sent.Count - 1], Does.Contain("\"paused\":true"));
+                    router.PauseInput("p", true); router.SetUiMode("menu", false);
+                    wire.Sent.Clear(); router.PauseInput("p", false);
+                    Assert.That(wire.Sent[0], Does.Contain("menu"));
+                    router.Open("p", "secret", 1); router.Handle("p", hello, 1);
+                    Assert.That(wire.Sent[wire.Sent.Count - 1], Does.Contain("menu"));
+                    Assert.That(router.Connections["p"].ControllerId, Is.EqualTo(id));
                 }
             }
             finally { Object.DestroyImmediate(go); }

@@ -83,6 +83,7 @@ namespace MotionControllers
             SmoothedRotation = timeConstant <= 0 ? RawRotation : Quaternion.Slerp(
                 SmoothedRotation, RawRotation, 1 - Mathf.Exp(-deltaTime / timeConstant));
         }
+        internal void CancelHeldInput() { PrimaryHeld = false; LastButtonPhase = ButtonPhase.Canceled; }
 
         public MotionFrame GetHistoryFromNewest(int offset)
         {

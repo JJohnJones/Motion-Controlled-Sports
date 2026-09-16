@@ -7,5 +7,5 @@ namespace MotionControllers
         void Close(string peerId);
     }
     public enum ControllerConnectionState
-    { Idle, CreatingSession, WaitingForController, Signaling, Connecting, Connected, Disconnected, Failed }
+    { Idle, CreatingSession, WaitingForController, Signaling, Connecting, Connected, Disconnected, Failed, Recovering, Reconnecting }
 }

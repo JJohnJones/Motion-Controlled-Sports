@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+  <ui:VisualElement class="game-card">
+    <ui:VisualElement name="art" class="card-art"><ui:Label name="number" class="card-number"/><ui:Label name="availability" class="tile-badge"/><ui:Image name="icon" class="card-icon"/></ui:VisualElement>
+    <ui:VisualElement class="card-body"><ui:Label name="title" class="card-title"/><ui:Label name="description" class="card-description"/><ui:Label name="players" class="eyebrow"/><ui:Button name="play" class="primary"/></ui:VisualElement>
+  </ui:VisualElement>
+</ui:UXML>

@@ -2,6 +2,7 @@
   "name": "MotionControllers",
   "rootNamespace": "MotionControllers",
   "references": [
-    "Unity.WebRTC"
+    "Unity.WebRTC",
+    "Unity.RenderPipelines.Universal.Runtime"
   ]
 }

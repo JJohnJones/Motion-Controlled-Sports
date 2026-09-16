@@ -14,7 +14,7 @@ namespace MotionControllers.Editor
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var root = new GameObject("Controller System");
             var manager = root.AddComponent<ControllerManager>();
-            root.AddComponent<ControllerReceiver>();
+            root.AddComponent<WebRtcLanControllerTransport>();
             var panel = root.AddComponent<ControllerDebugPanel>();
             var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cube.name = "Phone Cube";

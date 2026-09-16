@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e6b476f486b7b84896882241592561a, type: 3}
+  m_Name: Bowling
+  m_EditorClassIdentifier: MotionControllers::MotionControllers.Core.GameDefinition
+  displayName: Bowling
+  description: Aim your shot. Feel the swing. Clear the lane.
+  instructions: Calibrate facing down the lane. Aim, hold the phone button, swing, then lift to release.
+  scenePath: Assets/Scenes/Games/Bowling.unity
+  icon: {fileID: 0}
+  accent: {r: 0.39, g: 0.91, b: 0.73, a: 1}
+  minimumPlayers: 1
+  maximumPlayers: 4
+  available: 1
+  controllerUiMode: bowling

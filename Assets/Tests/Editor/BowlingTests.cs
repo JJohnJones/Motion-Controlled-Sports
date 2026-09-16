@@ -71,6 +71,21 @@ namespace MotionControllers.Tests
                 Assert.That(ball.Body.position,Is.EqualTo(ball.releasePoint.position)); Assert.That(ball.Body.isKinematic,Is.True);
             });
         }
+        [Test] public void PausingCancelsHoldAndCannotLaunchFromAReleaseWhilePaused()
+        {
+            WithGame((manager, game, ball) =>
+            {
+                manager.Submit(Frame(1, 1000, 0), true);
+                manager.SubmitButton(Button(1, ButtonPhase.Pressed, Frame(2, 1010, 0)));
+                Assert.That(game.State, Is.EqualTo(BowlingState.Holding));
+                game.SetPaused(true);
+                manager.SubmitButton(Button(2, ButtonPhase.Released, Frame(3, 1100, 8)));
+                Assert.That(game.State, Is.EqualTo(BowlingState.Ready));
+                Assert.That(ball.Body.isKinematic, Is.True);
+                game.SetPaused(false);
+                Assert.That(manager.Sessions["phone"].IsCalibrated, Is.True);
+            });
+        }
         [Test] public void AlphaControlsAimAndGammaDoesNot()
         {
             WithGame((manager,game,ball) =>
@@ -113,7 +128,47 @@ namespace MotionControllers.Tests
         private static ControllerButtonEvent Button(long seq, ButtonPhase phase, MotionFrame snapshot) => new ControllerButtonEvent
         { ControllerId="phone", Sequence=seq, Phase=phase, TimestampMs=snapshot.TimestampMs, ReceivedAtSeconds=Time.realtimeSinceStartupAsDouble, HasSnapshot=true, Snapshot=snapshot };
         private static void Tick(BowlingThrowController game) => typeof(BowlingThrowController).GetMethod("Update",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(game,null);
-        private static void WithGame(System.Action<ControllerManager,BowlingThrowController,BowlingBall> check)
+        [Test] public void MatchOwnershipRejectsOtherControllersAndLocksTransitionInput()
+        {
+            WithGame((manager,game,ball)=>{
+                manager.Submit(Frame(1,1000,0),true); game.ManageMatch(); game.PrepareTurn("phone");
+                var other = Button(1,ButtonPhase.Pressed,Frame(2,1010,0)); other.ControllerId="other";
+                game.HandleButton(other); Assert.That(game.State,Is.EqualTo(BowlingState.Ready));
+                game.HandleButton(Button(1,ButtonPhase.Pressed,Frame(2,1010,0)));Assert.That(game.State,Is.EqualTo(BowlingState.Holding));
+                game.LockTurn(); Assert.That(game.State,Is.EqualTo(BowlingState.Ready));
+                game.HandleButton(Button(2,ButtonPhase.Released,Frame(3,1100,8)));Assert.That(ball.Body.isKinematic,Is.True);
+                game.HandleButton(Button(3,ButtonPhase.Pressed,Frame(4,1200,8)));Assert.That(game.State,Is.EqualTo(BowlingState.Ready));
+            });
+        }
+        [Test] public void ResolvedRollRetainsStandingPinsThenSpareAdvancesPlayerAndResetsRack()
+        {
+            WithGame((manager,game,ball)=>{
+                manager.Register("other"); manager.Submit(Frame(1,1000,0),true);
+                var match = game.gameObject.AddComponent<BowlingGameSession>(); match.bowling = game;
+                match.SetControllers(new[]{"phone","other"}); match.TickMatch(2);
+                Assert.That(match.Phase,Is.EqualTo(BowlingMatchPhase.Ready));
+                manager.SubmitButton(Button(1,ButtonPhase.Pressed,Frame(2,1010,0)));
+                manager.SubmitButton(Button(2,ButtonPhase.Released,Frame(3,1100,5)));
+                Assert.That(match.Phase,Is.EqualTo(BowlingMatchPhase.Resolving));
+                for(int i=0;i<3;i++)game.pinRack.pins[i].rotation=Quaternion.Euler(75,0,0);
+                var standingPose=game.pinRack.pins[5].position;
+                ball.Body.position=new Vector3(0,-2,0);match.TickMatch(2);
+                Assert.That(match.Match.CurrentFrame.Rolls[0],Is.EqualTo(3));
+                Assert.That(game.pinRack.StandingCount,Is.EqualTo(7));
+                match.SetPaused(true);match.TickMatch(10);Assert.That(match.Phase,Is.EqualTo(BowlingMatchPhase.TurnTransition));
+                match.SetPaused(false);match.TickMatch(2);Assert.That(game.pinRack.pins[5].position,Is.EqualTo(standingPose));
+                Assert.That(game.ActiveControllerId,Is.EqualTo("phone"));
+                manager.SubmitButton(Button(3,ButtonPhase.Pressed,Frame(4,1150,0)));
+                manager.SubmitButton(Button(4,ButtonPhase.Released,Frame(5,1250,5)));
+                for(int i=3;i<10;i++)game.pinRack.pins[i].rotation=Quaternion.Euler(75,0,0);
+                ball.Body.position=new Vector3(0,-2,0);match.TickMatch(2);match.TickMatch(2);
+                Assert.That(match.Match.Players[0].Frames[0].Spare,Is.True);
+                Assert.That(game.pinRack.StandingCount,Is.EqualTo(10));Assert.That(game.ActiveControllerId,Is.EqualTo("other"));
+                manager.SubmitButton(Button(5,ButtonPhase.Pressed,Frame(6,1300,0)));
+                Assert.That(game.State,Is.EqualTo(BowlingState.Ready));
+            },10);
+        }
+        private static void WithGame(System.Action<ControllerManager,BowlingThrowController,BowlingBall> check, int pinCount = 0)
         {
             var root=new GameObject("Bowling test"); root.SetActive(false);
             try
@@ -121,7 +176,8 @@ namespace MotionControllers.Tests
                 var manager=root.AddComponent<ControllerManager>(); manager.Register("phone");
                 var spawn=new GameObject("Spawn"); spawn.transform.SetParent(root.transform); spawn.transform.position=new Vector3(0,0.2f,0);
                 var ballObject=new GameObject("Ball"); ballObject.transform.SetParent(root.transform); var ball=ballObject.AddComponent<BowlingBall>(); ball.releasePoint=spawn.transform;
-                var rack=root.AddComponent<BowlingPinRack>(); rack.pins=new Rigidbody[0];
+                var rack=root.AddComponent<BowlingPinRack>(); rack.pins=new Rigidbody[pinCount];
+                for(int i=0;i<pinCount;i++){var pin=new GameObject("Pin");pin.transform.SetParent(root.transform);pin.transform.position=new Vector3(i*.1f,0,17);rack.pins[i]=pin.AddComponent<Rigidbody>();}
                 var game=root.AddComponent<BowlingThrowController>(); game.inputSource=manager; game.ball=ball; game.pinRack=rack;
                 root.SetActive(true); game.Initialize();
                 check(manager,game,ball);

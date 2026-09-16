@@ -22,7 +22,6 @@ Startup / Bootstrap (first scene in build)
     PersistentControllerRoot
     ControllerManager
     WebRtcLanControllerTransport
-    ControllerReceiver (optional disabled fallback)
 
 Current menu or game scene → unload normally
   pairing/debug UI (optional)

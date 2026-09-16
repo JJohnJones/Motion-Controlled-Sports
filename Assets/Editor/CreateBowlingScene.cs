@@ -25,7 +25,7 @@ namespace MotionControllers.Editor
             Material aimMaterial = MaterialAsset(generated, "Aim", new Color(0.10f, 0.95f, 0.8f), true);
             var lanePhysics = new PhysicsMaterial("Lane contact") { dynamicFriction = 0.12f, staticFriction = 0.16f, bounciness = 0.02f,
                 frictionCombine = PhysicsMaterialCombine.Average, bounceCombine = PhysicsMaterialCombine.Minimum };
-            var pinPhysics = new PhysicsMaterial("Pin contact") { dynamicFriction = 0.25f, staticFriction = 0.3f, bounciness = 0.08f };
+            var pinPhysics = new PhysicsMaterial("Pin contact") { dynamicFriction = 0.7f, staticFriction = 0.8f, bounciness = 0.08f };
             AssetDatabase.CreateAsset(lanePhysics, generated + "/Lane.physicsMaterial");
             AssetDatabase.CreateAsset(pinPhysics, generated + "/Pins.physicsMaterial");
 
@@ -79,7 +79,7 @@ namespace MotionControllers.Editor
                     rigidbody.centerOfMass = new Vector3(0, 0.22f, 0); rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
                     rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
                     rigidbody.solverIterations = 12; rigidbody.solverVelocityIterations = 4;
-                    rigidbody.maxAngularVelocity = 40; rigidbody.angularDamping = 0.05f;
+                    rigidbody.maxAngularVelocity = 40; rigidbody.angularDamping = 0.6f;
                     rack.pins[index++] = rigidbody;
                 }
             var aim = new GameObject("Aim Indicator").AddComponent<LineRenderer>();
@@ -88,7 +88,7 @@ namespace MotionControllers.Editor
 
             var system = new GameObject("Controller System");
             var manager = system.AddComponent<ControllerManager>();
-            system.AddComponent<ControllerReceiver>();
+            system.AddComponent<WebRtcLanControllerTransport>();
             var debug = system.AddComponent<ControllerDebugPanel>();
             var bowling = system.AddComponent<BowlingThrowController>();
             bowling.inputSource = manager; bowling.ball = ball; bowling.pinRack = rack; bowling.aimIndicator = aim;

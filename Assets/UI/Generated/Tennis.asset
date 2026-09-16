@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e6b476f486b7b84896882241592561a, type: 3}
+  m_Name: Tennis
+  m_EditorClassIdentifier: MotionControllers::MotionControllers.Core.GameDefinition
+  displayName: Tennis
+  description: Swing, rally and serve. Singles or doubles with friends.
+  instructions: Calibrate in a comfortable ready pose. Tap the phone to toss on your serve, then swing. During rallies, time your swing as the ball reaches your racket. Tilt the racket to aim; faster swings hit harder.
+  scenePath: Assets/Scenes/Games/Tennis.unity
+  icon: {fileID: 0}
+  accent: {r: 0.95, g: 0.77, b: 0.4, a: 1}
+  minimumPlayers: 1
+  maximumPlayers: 4
+  available: 1
+  controllerUiMode: tennis
