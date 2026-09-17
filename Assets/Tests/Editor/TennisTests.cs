@@ -56,6 +56,21 @@ namespace MotionControllers.Tests
             s.Sample(5,1.02,1.02,Vector3.zero,Quaternion.identity,settings);s.Sample(6,1.04,1.04,Vector3.down*8,Quaternion.identity,settings);
             s.Sample(7,1.1,1.1,Vector3.down*8,Quaternion.identity,settings);Assert.That(s.Active(1.1,settings),Is.True);Assert.That(s.Backhand,Is.True);
         }
+        [Test] public void RestingPhoneAndAlternatingShakeCannotReturnBall()
+        {
+            var swing=new TennisSwing();var settings=new TennisSwingSettings();
+            swing.Sample(1,0,0,Vector3.zero,Quaternion.identity,settings);
+            for(int i=1;i<20;i++){
+                swing.Sample(i+1,i*.02,i*.02,(i%2==0?Vector3.right:Vector3.left)*8,Quaternion.identity,settings);
+                Assert.That(swing.Active(i*.02,settings),Is.False);
+            }
+            swing.Sample(30,1,1,Vector3.zero,Quaternion.identity,settings);
+            swing.Sample(31,1.02,1.02,Vector3.right*8,Quaternion.identity,settings);
+            swing.Sample(32,1.08,1.08,Vector3.right*8,Quaternion.identity,settings);
+            Assert.That(swing.Active(1.08,settings),Is.True);
+            swing.Sample(33,1.10,1.10,Vector3.zero,Quaternion.identity,settings);
+            Assert.That(swing.Active(1.10,settings),Is.False,"A completed swing must not leave an automatic-return window open");
+        }
         [Test] public void ShotPowerFaceTimingAndSpinChangeTrajectory() {
             var settings=new TennisShotSettings();var p=new Vector3(0,1.5f,-8);
             var slow=TennisShots.Calculate(p,0,3,Quaternion.identity,Vector3.up,0,Vector3.zero,false,true,settings);
@@ -63,6 +78,24 @@ namespace MotionControllers.Tests
             Assert.That(fast.Velocity.z,Is.GreaterThan(slow.Velocity.z));
             var angled=TennisShots.Calculate(p,0,12,Quaternion.Euler(0,30,20),Vector3.right,.4f,Vector3.right,false,true,settings);
             Assert.That(angled.Velocity.x,Is.Not.EqualTo(fast.Velocity.x));Assert.That(angled.Spin,Is.Not.Zero);
+        }
+        [Test] public void AirDragAndBounceDissipateEnergy()
+        {
+            var flight=new TennisFlight();flight.Launch(new Vector3(0,10,3),new TennisShot {Velocity=Vector3.forward*20});flight.Step(.1f);
+            Assert.That(flight.Velocity.z,Is.LessThan(20));
+            flight.Launch(new Vector3(0,.2f,3),new TennisShot {Velocity=new Vector3(4,-12,20),Spin=.6f});float before=flight.Velocity.sqrMagnitude;
+            flight.Step(.02f);Assert.That(flight.Ground,Is.True);Assert.That(flight.Velocity.sqrMagnitude,Is.LessThan(before));
+        }
+        [Test] public void PlayersAccelerateAndStayOnTheirSide()
+        {
+            var go=new GameObject("movement");try {
+                var player=new TennisPlayer {Avatar=go.transform,Slot=0};go.transform.position=player.Home(false);
+                var settings=new TennisMovementSettings();player.Move(new Vector3(4,1,-3),true,false,.02f,settings);
+                Assert.That(player.MovementVelocity.magnitude,Is.LessThanOrEqualTo(settings.acceleration*.02f+.001f));
+                for(int i=0;i<300;i++)player.Move(new Vector3(30,1,4),true,false,.02f,settings);
+                Assert.That(go.transform.position.z,Is.LessThanOrEqualTo(-1.8f));Assert.That(go.transform.position.x,Is.LessThanOrEqualTo(5));
+                player.ResetMovement();Assert.That(player.MovementVelocity,Is.EqualTo(Vector3.zero));
+            }finally{Object.DestroyImmediate(go);}
         }
         [Test] public void SweptNetAndGroundAvoidTunneling() {
             var f=new TennisFlight();f.Launch(new Vector3(0,.5f,-1),new TennisShot {Velocity=Vector3.forward*100});f.Step(.02f);Assert.That(f.Net,Is.True);

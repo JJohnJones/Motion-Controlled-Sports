@@ -17,13 +17,18 @@ namespace MotionControllers.Tennis
     {
         public Vector3 Position, Previous, Velocity;
         public float Spin;
+        public float AirDrag=.012f, Restitution=.73f, SurfaceRetention=.88f;
         public bool Ground, Net;
         public void Launch(Vector3 p, TennisShot shot) { Position=Previous=p; Velocity=shot.Velocity; Spin=shot.Spin; }
         public void Step(float dt)
         {
             Ground=Net=false; Previous=Position;
-            Velocity += new Vector3(0, -9.81f - Spin * Mathf.Abs(Velocity.z) * .2f, 0) * dt;
-            Position += Velocity * dt;
+            if(dt<=0)return;
+            var acceleration=new Vector3(0,-9.81f-Mathf.Clamp(Spin,-.6f,.6f)*new Vector2(Velocity.x,Velocity.z).magnitude*.2f,0);
+            var oldVelocity=Velocity;
+            Velocity=(Velocity+acceleration*dt)/(1+Mathf.Max(0,AirDrag)*Velocity.magnitude*dt);
+            Position+=(oldVelocity+Velocity)*(.5f*dt);
+            Spin*=Mathf.Exp(-.18f*dt);
             if (Previous.z * Position.z < 0) {
                 float t = -Previous.z / (Position.z-Previous.z);
                 var cross = Vector3.Lerp(Previous,Position,t);
@@ -32,7 +37,9 @@ namespace MotionControllers.Tennis
             if (Position.y <= .13f && Previous.y > .13f) {
                 float t = (Previous.y-.13f)/(Previous.y-Position.y);
                 Position = Vector3.Lerp(Previous,Position,t); Position.y=.13f;
-                Velocity.y=Mathf.Abs(Velocity.y)*.78f; Velocity.x *= .94f; Velocity.z *= .94f + Spin*.04f;
+                Velocity.y=Mathf.Abs(Velocity.y)*Mathf.Clamp01(Restitution);
+                float retention=Mathf.Clamp(SurfaceRetention+Spin*.06f,.65f,.98f);
+                Velocity.x*=retention;Velocity.z*=retention;Spin*=.7f;
                 Ground=true;
             }
         }

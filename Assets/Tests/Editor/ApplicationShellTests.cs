@@ -190,6 +190,10 @@ namespace MotionControllers.Tests
                     Assert.That(venue,Is.Not.Null);
                     foreach(var collider in venue.GetComponentsInChildren<Collider>())Assert.That(collider.enabled,Is.False,"Tennis scenery must not affect contact or boundaries");
                     Assert.That(tennis.GetComponent<MotionControllers.Tennis.TennisPresentation>(),Is.Not.Null);
+                    foreach(var player in tennis.Players){
+                        Assert.That(player.Avatar.Find("Player presentation").lossyScale.x,Is.EqualTo(.85f*.78f).Within(.001f));
+                        Assert.That(player.Racket.lossyScale.x,Is.EqualTo(.85f*1.18f).Within(.001f));
+                    }
                     int racketFeedback=0,tossFeedback=0;
                     tennis.Feedback+=e=>{if(e.Kind==MotionControllers.Tennis.TennisFeedbackKind.Racket)racketFeedback++;if(e.Kind==MotionControllers.Tennis.TennisFeedbackKind.Toss)tossFeedback++;};
                     Assert.That(flow.ControllerUiMode,Is.EqualTo("tennis"));
@@ -232,6 +236,12 @@ namespace MotionControllers.Tests
                 for(int humans=1;humans<=2;humans++) {
                     fake.participants=humans;flow.Play(swordDefinition);yield return Settle(flow);
                     var duel=flow.GameSession as MotionControllers.SwordDuel.SwordDuelSession;
+                    var atmosphere=duel.GetComponent<MotionControllers.SwordDuel.SwordDuelAtmosphere>();
+                    Assert.That(atmosphere,Is.Not.Null);
+                    Assert.That(duel.duelCamera.transform.position.z,Is.LessThan(duel.Fighters[0].Root.position.z));
+                    foreach(var fighter in duel.Fighters){var framing=duel.duelCamera.WorldToViewportPoint(fighter.Torso);Assert.That(framing.z,Is.GreaterThan(0));Assert.That(framing.x,Is.InRange(.05f,.95f));Assert.That(framing.y,Is.InRange(.05f,.95f));}
+                    foreach(var collider in duel.transform.Find("Duel courtyard scenery").GetComponentsInChildren<Collider>())Assert.That(collider.enabled,Is.False);
+
                     Assert.That(duel,Is.Not.Null);Assert.That(duel.Fighters[1].AI,Is.EqualTo(humans==1));
                     duel.ai.aggression=0;duel.ai.blockChance=0;
                     for(int i=0;i<humans;i++) {

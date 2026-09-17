@@ -30,7 +30,8 @@ namespace MotionControllers.SwordDuel
         private bool paused;
         private float phaseTime;
         private double clock;
-        private Vector3 cameraHome;
+        private SwordDuelAtmosphere atmosphere;
+        public event Action<SwordContact,Vector3,float> ContactFeedback;
         public void SetControllers(IReadOnlyList<string> ids)
         {
             if(Match!=null)return;
@@ -43,8 +44,8 @@ namespace MotionControllers.SwordDuel
                 presentation.Create(f,transform);
             }
             if(source!=null)source.ButtonChanged+=Button;
-            if(duelCamera!=null)cameraHome=duelCamera.transform.position;
             ResetRound();
+            if(Application.isPlaying){atmosphere=GetComponent<SwordDuelAtmosphere>();if(atmosphere==null)atmosphere=gameObject.AddComponent<SwordDuelAtmosphere>();atmosphere.Initialize(this);}
         }
         public string ControllerState(string id)
         {
@@ -67,6 +68,7 @@ namespace MotionControllers.SwordDuel
         public void SetPaused(bool value)
         {
             if(paused==value)return;paused=value;
+            if(atmosphere!=null)atmosphere.SetPaused(value);
             if(Fighters!=null)foreach(var f in Fighters){f.Motion.Reset();f.Action=SwordAction.Guard;f.ContactResolved=true;f.ParryAt=-100;}
         }
         private void OnDestroy(){if(source!=null)source.ButtonChanged-=Button;presentation.Dispose();}
@@ -123,21 +125,22 @@ namespace MotionControllers.SwordDuel
             f.ContactResolved=true;
             var result=SwordCombat.Resolve(true,Mirrored(f.Attack),d.Defense(d.AI || d.Motion.Fresh),clock,combat);
             if(result==SwordContact.Parry){f.Stagger(combat.stagger);d.FlashTime=.2f;d.FeedbackColor=Color.cyan;Status=d.Name+" PARRY!";}
-            else if(result==SwordContact.Block){f.Action=SwordAction.Recovery;f.ActionTime=0;d.Recoil=.08f+f.Attack.Strength*.14f;d.FlashTime=.08f;d.FeedbackColor=Color.yellow;Status=d.Name+" blocked";}
+            else if(result==SwordContact.Block){f.RecoveryTip=SwordPresentation.Tip(f,combat);f.Action=SwordAction.Recovery;f.ActionTime=0;d.Recoil=.08f+f.Attack.Strength*.14f;d.FlashTime=.08f;d.FeedbackColor=Color.yellow;Status=d.Name+" blocked";}
             else if(result==SwordContact.Hit){Match.Damage(d.Index,combat.baseDamage+combat.strengthDamage*f.Attack.Strength);d.Stagger(.3f);d.Recoil=.15f+f.Attack.Strength*.2f;d.FlashTime=.15f;d.FeedbackColor=new Color(1,.35f,.3f);Status=f.Name+" hit!";}
+            ContactFeedback?.Invoke(result,d.Torso,f.Attack.Strength);
             phaseTime=0;
             if(diagnostics)Debug.Log($"[Sword] {result} attacker={f.Name} direction={f.Attack.Direction} guard={d.GuardBlade} parryOffset={clock-d.ParryAt:F3} health={Match.Health[d.Index]:F0}");
         }
         private void ResetRound()
         {
-            Phase=SwordRoundPhase.Ready;phaseTime=0;brain.Reset();Status="Hold your sword-ready pose; tap phone to ready";
+            Phase=SwordRoundPhase.Ready;phaseTime=0;brain.Reset();Status="Phone upright · screen inward · tap to ready";
             foreach(var f in Fighters){f.Ready=f.AI;f.Action=SwordAction.Guard;f.ActionTime=0;f.Recoil=0;f.ContactResolved=false;f.GuardPose=Quaternion.identity;f.GuardBlade=Vector2.up;f.ParryAt=-100;f.Motion.Reset();f.Root.position=new Vector3(0,0,f.Index==0?-1.55f:1.55f);}
             Draw();
         }
         private void Draw()
         {
             foreach(var f in Fighters)presentation.Draw(f,combat,duelCamera);
-            if(duelCamera!=null){var center=(Fighters[0].Root.position+Fighters[1].Root.position)*.5f;duelCamera.transform.position=Vector3.Lerp(duelCamera.transform.position,cameraHome+center*.15f,.1f);duelCamera.transform.LookAt(center+Vector3.up*1.2f);}
+            // Camera tracking belongs to SwordDuelAtmosphere and runs after fighter updates.
         }
         public GameResult Finish()=>new GameResult(IsComplete?Fighters[Match.Winner].Name+" wins Sword Duel!":"Duel in progress",$"{Fighters[0].Name}  {Match.Wins[0]} – {Match.Wins[1]}  {Fighters[1].Name}");
     }

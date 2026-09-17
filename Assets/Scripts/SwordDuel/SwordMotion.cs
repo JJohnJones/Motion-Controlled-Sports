@@ -6,8 +6,9 @@ namespace MotionControllers.SwordDuel
     {
         public float minimumSpeed=3, maximumSpeed=13, minimumArcDegrees=22, minimumSeconds=.055f;
         [Range(0,1)] public float directionConsistency=.75f;
-        public float sensitivity=1, orientationSensitivity=1, response=25, rotationLimit=100;
-        public bool leftHanded;
+        public float sensitivity=1, orientationSensitivity=1, response=25;
+        [HideInInspector] public float rotationLimit=100; // Retained for old serialized scenes.
+        [HideInInspector] public bool leftHanded; // Handedness comes from the controller/player settings.
     }
     public sealed class SwordMotion
     {
@@ -15,33 +16,51 @@ namespace MotionControllers.SwordDuel
         public Vector2 MotionDirection {get;private set;}
         public float AngularSpeed {get;private set;}
         public bool Fresh {get;private set;}
-        private Quaternion neutral=Quaternion.identity;
+        private Quaternion neutral=Quaternion.identity, neutralAbsolute=Quaternion.identity, previousPose=Quaternion.identity;
+        private bool leftHanded;
+        private bool poseInitialized;
         private long sequence;
         private int revision=-1;
         private double previous=-1, started;
         private float arc, peak;
         private Vector2 direction;
         private bool armed, flush=true;
-        public void SetNeutral(ControllerSession c){neutral=c.RawRotation;revision=c.CalibrationRevision;Reset();}
+        public void SetNeutral(ControllerSession c){neutral=c.RawRotation;neutralAbsolute=c.Latest.Orientation;leftHanded=c.LeftHanded;revision=c.CalibrationRevision;poseInitialized=false;Reset();}
         public void Reset(){armed=false;arc=peak=0;previous=-1;flush=true;Fresh=false;}
         public bool Read(ControllerSession c,double now,bool canAttack,SwordMotionSettings settings,out SwordAttack attack)
         {
             attack=default;Fresh=c.IsCalibrated && c.HasFrame && now-c.Latest.ReceivedAtSeconds<.3;
             if(!Fresh){Reset();return false;}
-            if(revision!=c.CalibrationRevision){revision=c.CalibrationRevision;neutral=Quaternion.identity;Reset();}
-            Pose=Quaternion.RotateTowards(Quaternion.identity,Quaternion.SlerpUnclamped(Quaternion.identity,Quaternion.Inverse(neutral)*c.RawRotation,settings.orientationSensitivity),settings.rotationLimit);
+            if(revision!=c.CalibrationRevision || leftHanded!=c.LeftHanded)SetNeutral(c);
+            var current=MapGripRotation(Quaternion.Inverse(neutral)*c.RawRotation,leftHanded);
+            if(!poseInitialized){Pose=current;previousPose=current;poseInitialized=true;}
+            else {Pose=IntegrateOrientation(Pose,previousPose,current,settings.orientationSensitivity);previousPose=current;}
             if(flush){sequence=c.Latest.Sequence;flush=false;return false;}
             bool detected=false;
             for(int i=c.HistoryCount-1;i>=0;i--){
                 var f=c.GetHistoryFromNewest(i);if(f.Sequence<=sequence)continue;sequence=f.Sequence;
                 if(c.Latest.TimestampMs-f.TimestampMs>220 || !f.HasAngularVelocity)continue;
-                var angular=Pose*f.AngularVelocity;AngularSpeed=angular.magnitude;
-                var planar=new Vector2(-angular.z,-angular.x);if(settings.leftHanded)planar.x=-planar.x;
+                var relative=Quaternion.Inverse(neutralAbsolute)*f.Orientation;
+                var angular=MapGripAngularVelocity(relative,f.AngularVelocity,leftHanded);AngularSpeed=angular.magnitude;
+                var planar=new Vector2(-angular.z,-angular.x);
                 MotionDirection=planar.normalized;
                 if(Sample(f.TimestampMs/1000,planar*c.MotionSensitivity,canAttack && !detected,settings,out var sample)){attack=sample;detected=true;}
             }
             return detected;
         }
+        // Converted device +Y is phone top; -Z faces out of the screen.
+        // Right hand: screen faces left, so device +Z points right. Mirror for left hand.
+        public static Quaternion GripBasis(bool leftHanded)=>Quaternion.AngleAxis(leftHanded?-90:90,Vector3.up);
+        public static Quaternion MapGripRotation(Quaternion relative,bool leftHanded)
+        {
+            var basis=GripBasis(leftHanded);
+            return (basis*relative*Quaternion.Inverse(basis)).normalized;
+        }
+        public static Vector3 MapGripAngularVelocity(Quaternion relative,Vector3 deviceAngularVelocity,bool leftHanded)
+            => GripBasis(leftHanded)*(relative*deviceAngularVelocity);
+        // Incremental rotation avoids flipping at +/-180 degrees under an absolute angle clamp.
+        public static Quaternion IntegrateOrientation(Quaternion pose,Quaternion previous,Quaternion current,float sensitivity)
+            => (pose*Quaternion.SlerpUnclamped(Quaternion.identity,Quaternion.Inverse(previous)*current,Mathf.Clamp(sensitivity,.1f,2))).normalized;
         public bool Sample(double time,Vector2 velocity,bool canAttack,SwordMotionSettings settings,out SwordAttack attack)
         {
             attack=default;float dt=previous<0?0:(float)(time-previous);previous=time;

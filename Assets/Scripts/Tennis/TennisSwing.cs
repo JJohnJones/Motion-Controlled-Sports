@@ -6,6 +6,8 @@ namespace MotionControllers.Tennis
     {
         [Min(.1f)] public float minimumSpeed = 2.8f;
         [Min(.01f)] public float sustainSeconds = .035f;
+        [Min(1)] public float minimumArcDegrees=12;
+        [Range(0,1)] public float directionConsistency=.65f;
         [Min(.05f)] public float windowSeconds = .30f;
         [Min(.1f)] public float cooldownSeconds = .4f;
         [Min(.1f)] public float sensitivity = 1;
@@ -22,9 +24,11 @@ namespace MotionControllers.Tennis
         public bool Backhand => Direction.y < 0;
         private long sequence;
         private double previous, aboveSince = -1;
+        private float arc;
+        private Vector3 initiationDirection;
         private bool armed = true, consumed, skipHistory;
         private int revision = -1;
-        public void Reset() { aboveSince = -1; armed = false; consumed = true; Started = -100; skipHistory = true; }
+        public void Reset() { aboveSince = -1; arc=0; armed = false; consumed = true; Started = -100; skipHistory = true; }
         public bool Active(double now, TennisSwingSettings settings) => !consumed && now >= Started && now - Started <= settings.windowSeconds;
         public void Consume() { consumed = true; }
         public void Read(ControllerSession session, double now, TennisSwingSettings settings)
@@ -44,14 +48,17 @@ namespace MotionControllers.Tennis
         public void Sample(long seq, double time, double now, Vector3 angular, Quaternion face, TennisSwingSettings settings)
         {
             float speed = angular.magnitude * settings.sensitivity;
-            if (time - previous > .25) aboveSince = -1;
+            float dt=(float)(time-previous);
+            if(dt<=0 || dt>.12f){aboveSince=-1;arc=0;}
             previous = time; Face = face;
-            if (speed < settings.minimumSpeed * .5f) { armed = true; aboveSince = -1; return; }
+            if (speed < settings.minimumSpeed * .5f) { armed = true; aboveSince = -1; arc=0; consumed=true; return; }
             if (Active(now, settings) && speed > Peak) { Peak = speed; Direction = angular.normalized; }
-            if (speed < settings.minimumSpeed) { aboveSince = -1; return; }
+            if (speed < settings.minimumSpeed) { aboveSince = -1; arc=0; return; }
             if (!armed || now - Started < settings.cooldownSeconds) return;
-            if (aboveSince < 0) aboveSince = time;
-            if (time - aboveSince < settings.sustainSeconds) return;
+            if (aboveSince < 0 || Vector3.Dot(initiationDirection,angular.normalized)<settings.directionConsistency)
+            { aboveSince=time;arc=0;initiationDirection=angular.normalized; }
+            if(dt>0 && dt<=.12f)arc+=angular.magnitude*dt*Mathf.Rad2Deg;
+            if (time - aboveSince < settings.sustainSeconds || arc<settings.minimumArcDegrees) return;
             Started = now; Peak = speed; Direction = angular.normalized; consumed = false; armed = false; aboveSince = -1;
         }
     }

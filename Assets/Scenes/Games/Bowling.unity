@@ -618,7 +618,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 361308240}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.196116135, y: 0, z: 0, w: 0.980580676}
+  m_LocalRotation: {x: 0.19611613, y: 0, z: 0, w: 0.9805807}
   m_LocalPosition: {x: 0, y: 5, z: -8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -1382,7 +1382,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 547640277}
   serializedVersion: 5
-  m_Mass: 6
+  m_Mass: 10
   m_LinearDamping: 0.015
   m_AngularDamping: 0.03
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -3100,6 +3100,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: MotionControllers::MotionControllers.Bowling.BowlingGameSession
   bowling: {fileID: 1454620399}
+  resolution:
+    quietSeconds: 1
+    maximumSeconds: 20
+    pinLinearThreshold: 0.08
+    pinAngularThreshold: 0.15
+    playAreaReference: {fileID: 0}
+    ballPlayBounds:
+      m_Center: {x: 0, y: 2, z: 10}
+      m_Extent: {x: 3, y: 3, z: 12}
+    ballLinearThreshold: 0.2
+    ballAngularThreshold: 1.5
+  turnTransitionSeconds: 1.5
 --- !u!1 &1604945044
 GameObject:
   m_ObjectHideFlags: 0
@@ -3767,6 +3779,9 @@ MonoBehaviour:
   - {fileID: 1274131075}
   - {fileID: 2051598179}
   centerOfMassHeight: 0.22
+  knockdownAngle: 45
+  fallenDistance: 0.2
+  deckClearance: {x: 1.2, y: 1, z: 2.5}
 --- !u!4 &1957090300
 Transform:
   m_ObjectHideFlags: 0

@@ -40,7 +40,7 @@ namespace MotionControllers.SwordDuel
             Vector3 attack=center+sweep*Mathf.Lerp(-1.1f,1.1f,progress);
             if(f.Action==SwordAction.Windup)return Vector3.Lerp(guard,center-sweep*1.1f,Mathf.Clamp01(f.ActionTime/settings.windup));
             if(f.Action==SwordAction.Active)return attack;
-            if(f.Action==SwordAction.Recovery)return Vector3.Lerp(center+sweep*1.1f,guard,Mathf.Clamp01(f.ActionTime/settings.recovery));
+            if(f.Action==SwordAction.Recovery)return Vector3.Lerp(f.RecoveryTip,guard,Mathf.SmoothStep(0,1,Mathf.Clamp01(f.ActionTime/settings.recovery)));
             return guard;
         }
         public void Dispose(){foreach(var m in materials)Object.Destroy(m);}

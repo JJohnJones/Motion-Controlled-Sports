@@ -22,7 +22,7 @@ namespace MotionControllers.SwordDuel
         public double ParryAt=-100;
         public float ParrySpeed;
         public Vector2 ParryMotion;
-        public Vector3 PreviousHand,PreviousTip;
+        public Vector3 PreviousHand,PreviousTip,RecoveryTip;
         public bool PreviousGuardMatch;
         public Vector3 Forward=>Index==0?Vector3.forward:Vector3.back;
         public Vector3 Hand=>Root.position+Vector3.up*1.25f+Forward*.3f+(LeftHanded ? Facing*Vector3.left*.2f : Vector3.zero);
@@ -35,7 +35,7 @@ namespace MotionControllers.SwordDuel
             FlashTime=Mathf.Max(0,FlashTime-dt);Recoil=Mathf.MoveTowards(Recoil,0,dt*2);
             ActionTime+=dt;
             if(Action==SwordAction.Windup && ActionTime>=settings.windup){Action=SwordAction.Active;ActionTime=0;}
-            else if(Action==SwordAction.Active && ActionTime>=settings.active){Action=SwordAction.Recovery;ActionTime=0;}
+            else if(Action==SwordAction.Active && ActionTime>=settings.active){RecoveryTip=SwordPresentation.Tip(this,settings);Action=SwordAction.Recovery;ActionTime=0;}
             else if(Action==SwordAction.Recovery && ActionTime>=settings.recovery || Action==SwordAction.Stagger && ActionTime>=0){Action=SwordAction.Guard;ActionTime=0;Motion.Reset();}
         }
         public SwordDefense Defense(bool fresh) => new SwordDefense {Valid=Action==SwordAction.Guard && fresh,Blade=GuardBlade,ParryAt=ParryAt,ParryMotion=ParryMotion,ParrySpeed=ParrySpeed};

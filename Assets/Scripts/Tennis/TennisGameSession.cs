@@ -52,12 +52,12 @@ namespace MotionControllers.Tennis
                 player.Name = player.AI ? "AI" : "P" + (i+1);
                 if (!player.AI && source is ControllerManager manager) player.Name="P"+manager.GetPlayerNumber(player.Id);
                 var color = i%2==0 ? new Color(.1f,.65f,1) : new Color(1,.45f,.12f);
-                var root = new GameObject(player.Name); root.transform.SetParent(transform,false); player.Avatar=root.transform;
+                var root = new GameObject(player.Name); root.transform.SetParent(transform,false); player.Avatar=root.transform;root.transform.localScale=Vector3.one*.85f;
                 Shape(PrimitiveType.Capsule,root.transform,new Vector3(0,.8f,0),new Vector3(.65f,.8f,.65f),color);
                 var racketRoot = new GameObject("Racket " + player.Name); racketRoot.transform.SetParent(root.transform,false);
-                racketRoot.transform.localPosition=new Vector3(.65f,1.3f,.35f*(i%2==0?1:-1)); player.Racket=racketRoot.transform; player.Racket.rotation=Quaternion.LookRotation(player.Forward);
-                Shape(PrimitiveType.Cylinder,player.Racket,Vector3.zero,new Vector3(.6f,.035f,.8f),Color.white).localRotation=Quaternion.Euler(90,0,0);
-                Shape(PrimitiveType.Cube,player.Racket,new Vector3(0,-.5f,0),new Vector3(.08f,.55f,.08f),color);
+                racketRoot.transform.localPosition=new Vector3(.65f,1.1f,.35f*(i%2==0?1:-1)); player.Racket=racketRoot.transform; player.Racket.rotation=Quaternion.LookRotation(player.Forward);
+                player.Racket.localScale=Vector3.one*1.18f;
+                CreateRacket(player.Racket,color);
                 var labelObject=new GameObject("Player label"); labelObject.transform.SetParent(root.transform,false); labelObject.transform.localPosition=new Vector3(0,2.4f,0);
                 var label=labelObject.AddComponent<TextMesh>();label.text=player.Name;label.characterSize=.22f;label.fontSize=40;label.anchor=TextAnchor.MiddleCenter;label.color=color;
                 label.transform.rotation=Quaternion.Euler(50,0,0);
@@ -68,9 +68,24 @@ namespace MotionControllers.Tennis
         private Transform Shape(PrimitiveType type, Transform parent, Vector3 pos, Vector3 scale, Color color)
         {
             var go=GameObject.CreatePrimitive(type);go.transform.SetParent(parent,false);go.transform.localPosition=pos;go.transform.localScale=scale;
-            Destroy(go.GetComponent<Collider>());
-            var material=new Material(Shader.Find("Universal Render Pipeline/Lit"));material.color=color;materials.Add(material);go.GetComponent<Renderer>().sharedMaterial=material;
+            var collider=go.GetComponent<Collider>();collider.enabled=false;Destroy(collider);
+            var material=materials.Find(m=>m.color==color);
+            if(material==null){material=new Material(Shader.Find("Universal Render Pipeline/Lit"));material.color=color;materials.Add(material);}
+            go.GetComponent<Renderer>().sharedMaterial=material;
             return go.transform;
+        }
+        private void CreateRacket(Transform pivot,Color color)
+        {
+            // Origin is the hand/grip, with all of the head above it.
+            var dark=new Color(.07f,.09f,.12f);
+            Shape(PrimitiveType.Cylinder,pivot,new Vector3(0,.035f,0),new Vector3(.065f,.115f,.065f),dark);
+            for(int i=0;i<6;i++)Shape(PrimitiveType.Cylinder,pivot,new Vector3(0,-.06f+i*.037f,0),new Vector3(.069f,.004f,.069f),color);
+            void Segment(Vector3 a,Vector3 b,float width,Color tint){var t=Shape(PrimitiveType.Cube,pivot,(a+b)*.5f,new Vector3(width,Vector3.Distance(a,b),width),tint);t.localRotation=Quaternion.FromToRotation(Vector3.up,b-a);}
+            const float cx=.155f,cy=.21f,center=.46f;
+            for(int i=0;i<40;i++){float a=i*Mathf.PI*2/40,b=(i+1)*Mathf.PI*2/40;Segment(new Vector3(Mathf.Cos(a)*cx,center+Mathf.Sin(a)*cy,0),new Vector3(Mathf.Cos(b)*cx,center+Mathf.Sin(b)*cy,0),.025f,i%10<3?Color.white:color);}
+            Segment(new Vector3(0,.15f,0),new Vector3(-.10f,.30f,0),.022f,color);Segment(new Vector3(0,.15f,0),new Vector3(.10f,.30f,0),.022f,color);
+            for(int i=-5;i<=5;i++){float x=i*cx/6,h=cy*Mathf.Sqrt(1-x*x/(cx*cx));Segment(new Vector3(x,center-h,0),new Vector3(x,center+h,0),.004f,Color.white);}
+            for(int i=-7;i<=7;i++){float y=i*cy/8,w=cx*Mathf.Sqrt(1-y*y/(cy*cy));Segment(new Vector3(-w,center+y,0),new Vector3(w,center+y,0),.004f,Color.white);}
         }
         private string TeamName(int team) => string.Join(" + ",Players.Where(p=>p.Team==team).Select(p=>p.Name));
         public void SetPaused(bool value) { if(paused==value)return; paused=value; presentation?.SetPaused(value); if(value && Players!=null) foreach(var p in Players)p.Swing.Reset(); }
@@ -84,7 +99,7 @@ namespace MotionControllers.Tennis
         private void BeginPoint()
         {
             Phase=TennisPhase.Setup;RallyContacts=0;phaseTime=0;serveFlight=false;bounces=0;
-            foreach(var p in Players) {p.Avatar.position=p.Home(Players.Length==4);p.Swing.Reset();}
+            foreach(var p in Players) {p.Avatar.position=p.Home(Players.Length==4);p.ResetMovement();p.Swing.Reset();}
             var server=Players[Match.ServerSlot];float sign=server.Team==0?1:-1;
             server.Avatar.position=new Vector3((Match.DeuceSide?1:-1)*sign*2,0,-sign*11);
             var receiver=Players[Match.ReceiverSlot];receiver.Avatar.position=new Vector3((Match.DeuceSide?-1:1)*sign*2,0,sign*8.5f);
@@ -104,7 +119,10 @@ namespace MotionControllers.Tennis
         {
             if(paused || Match==null || IsComplete) return;
             double now=Time.realtimeSinceStartupAsDouble;
-            foreach(var p in Players) if(!p.AI && source!=null && source.TryGetController(p.Id,out var session)) p.Orient(session,now,Time.deltaTime,swing);
+            foreach(var p in Players) if(!p.AI) {
+                if(source!=null && source.TryGetController(p.Id,out var session)) p.Orient(session,now,Time.deltaTime,swing);
+                else p.Swing.Reset();
+            }
         }
         private void FixedUpdate() { TickGame(Time.fixedDeltaTime); }
         public void TickGame(float dt)
@@ -137,7 +155,7 @@ namespace MotionControllers.Tennis
             }
             foreach(var p in Players) {
                 bool incoming=p.Team!=lastTeam && TennisCourt.Side(flight.Position)==p.Team;
-                p.Move(flight.Position+flight.Velocity*.15f,incoming,Players.Length==4,dt,movement);
+                p.Move(flight.Position,p.Team!=lastTeam,Players.Length==4,dt,movement,flight.Velocity);
                 if(!incoming || hitAge<.18f || flight.Position.y>3.4f || (p.AI && flight.Position.y<.75f))continue;
                 if(serveFlight)continue; // A serve must bounce before returning.
                 // During the service return, keep doubles receiving order fixed.

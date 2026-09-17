@@ -62,12 +62,13 @@ namespace MotionControllers.Tennis
         {
             var visual=new GameObject("Player presentation").transform;visual.SetParent(player.Avatar,false);
             // Reparent only the existing body mesh, never the racket, contact anchor or player root.
-            var body=player.Avatar.GetChild(0);if(body!=visual)body.SetParent(visual,true);
+            var body=player.Avatar.GetChild(0);if(body!=visual)body.SetParent(visual,false);
             var shirt=Material(player.Name+" trim",player.Team==0?new Color(.3f,.85f,1):new Color(1,.65f,.25f),.2f);
             var skin=Material(player.Name+" face",new Color(.72f,.48f,.3f));
             Shape("Head",PrimitiveType.Sphere,new Vector3(0,1.75f,0),Vector3.one*.36f,skin,visual);
             Shape("Headband",PrimitiveType.Cylinder,new Vector3(0,1.84f,0),new Vector3(.37f,.035f,.37f),shirt,visual);
             foreach(float x in new[]{-.19f,.19f})Shape("Court shoe",PrimitiveType.Cube,new Vector3(x,.09f,.05f),new Vector3(.22f,.16f,.35f),shirt,visual);
+            visual.localScale=Vector3.one*.78f;
             return visual;
         }
         private Material Material(string name,Color color,float smooth=.1f,bool unlit=false)

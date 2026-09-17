@@ -10,7 +10,7 @@ namespace MotionControllers.Core
         public static string GripInstructions(string mode) => mode == "bowling"
             ? "Bowling: pick up the phone with its top pointing forward, like a Wii controller. Aim, hold the screen, swing your arm forward, then release."
             : mode == "tennis" ? "Tennis: lift the phone upright with its top UP, like a racket handle. Keep this grip after calibration. Tap to toss, then swing to serve."
-            : "Sword Duel: lift the phone upright with its top UP, like a sword handle. In the arena, tap in your comfortable guard pose to ready each round. Swing to attack; angle the blade to guard.";
+            : "Sword Duel: hold the phone upright, TOP UP, with the SCREEN facing inward (right hand: screen LEFT; left hand: screen RIGHT). Choose your handedness in Settings. In the arena, tap in this guard pose to ready each round. Swing to attack; angle the blade to guard.";
         private readonly IControllerButtonSource source;
         private readonly IControllerLobby lobby;
         private readonly Dictionary<string, int> ready = new Dictionary<string, int>();
